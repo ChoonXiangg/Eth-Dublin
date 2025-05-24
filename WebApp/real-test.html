@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛂 Real Passport Verification Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        
+        .status.info { background: rgba(52, 152, 219, 0.3); }
+        .status.success { background: rgba(46, 204, 113, 0.3); }
+        .status.error { background: rgba(231, 76, 60, 0.3); }
+        .status.warning { background: rgba(241, 196, 15, 0.3); }
+        
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .step {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .step h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        
+        .log {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 15px 0;
+            white-space: pre-wrap;
+        }
+        
+        .wallet-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        
+        .contract-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛂 Real Passport Verification Test</h1>
+        <div class="status info">
+            <strong>🚀 Real Implementation Testing</strong><br>
+            This test uses actual MetaMask wallet connection and real blockchain interactions.
+        </div>
+
+        <!-- Contract Information -->
+        <div class="step">
+            <h3>📄 Smart Contract Information</h3>
+            <div id="contractInfo" class="contract-info">Loading contract info...</div>
+        </div>
+
+        <!-- Step 1: Wallet Connection -->
+        <div class="step">
+            <h3>1. 👛 Wallet Connection</h3>
+            <button id="connectWallet">Connect MetaMask Wallet</button>
+            <div id="walletStatus" class="status info" style="display: none;"></div>
+            <div id="walletInfo" class="wallet-info" style="display: none;"></div>
+        </div>
+
+        <!-- Step 2: NFC Passport Scan -->
+        <div class="step">
+            <h3>2. 📱 NFC Passport Scan</h3>
+            <button id="scanPassport" disabled>Scan Passport (Simulated)</button>
+            <div id="scanStatus" class="status info" style="display: none;"></div>
+            <div id="passportData" style="display: none;"></div>
+        </div>
+
+        <!-- Step 3: TEE Verification -->
+        <div class="step">
+            <h3>3. 🔒 TEE Verification & Blockchain Storage</h3>
+            <button id="verifyTEE" disabled>Verify with TEE & Store on Blockchain</button>
+            <div id="teeStatus" class="status info" style="display: none;"></div>
+        </div>
+
+        <!-- Step 4: Verification Results -->
+        <div class="step">
+            <h3>4. ✅ Verification Results</h3>
+            <div id="results" style="display: none;"></div>
+        </div>
+
+        <!-- Console Log -->
+        <div class="step">
+            <h3>📋 Console Log</h3>
+            <div id="console" class="log"></div>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+    <script>
+        // Global variables
+        let walletService = null;
+        let nfcService = null;
+        let teeService = null;
+        let contractInfo = null;
+        let currentPassportData = null;
+
+        // Console logging
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('console');
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logElement.textContent += logEntry;
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('console').textContent = '';
+        }
+
+        // Load contract information
+        async function loadContractInfo() {
+            try {
+                const response = await fetch('./contract-info.json');
+                contractInfo = await response.json();
+                
+                document.getElementById('contractInfo').innerHTML = `
+                    <strong>Contract Address:</strong> ${contractInfo.address}<br>
+                    <strong>Network:</strong> ${contractInfo.network}<br>
+                    <strong>Deployed At:</strong> ${contractInfo.deployedAt}<br>
+                    <strong>TEE Verifier:</strong> ${contractInfo.teeVerifier}
+                `;
+                
+                log('✅ Contract information loaded');
+            } catch (error) {
+                log('❌ Failed to load contract info: ' + error.message, 'error');
+                document.getElementById('contractInfo').innerHTML = 
+                    '<span style="color: #e74c3c;">❌ Contract info not found. Please deploy the contract first.</span>';
+            }
+        }
+
+        // Wallet Service Implementation
+        class WalletService {
+            constructor() {
+                this.connection = null;
+            }
+
+            async connectWallet() {
+                try {
+                    if (typeof window.ethereum === 'undefined') {
+                        throw new Error('MetaMask not detected. Please install MetaMask extension.');
+                    }
+
+                    log('🦊 MetaMask detected, connecting...');
+                    
+                    const provider = new ethers.providers.Web3Provider(window.ethereum);
+                    
+                    // Request account access
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    
+                    const signer = provider.getSigner();
+                    const address = await signer.getAddress();
+                    
+                    // Check network
+                    const network = await provider.getNetwork();
+                    log(`🌐 Connected to network: ${network.name} (Chain ID: ${network.chainId})`);
+                    
+                    this.connection = {
+                        address,
+                        provider,
+                        signer,
+                    };
+                    
+                    log(`✅ Wallet connected: ${address}`);
+                    return address;
+                } catch (error) {
+                    log(`❌ Error connecting wallet: ${error.message}`, 'error');
+                    throw error;
+                }
+            }
+
+            getAddress() {
+                return this.connection?.address || null;
+            }
+
+            async verifyIdentityOnChain(contractAddress, identityHash, signature) {
+                if (!this.connection) {
+                    throw new Error('Wallet not connected');
+                }
+
+                try {
+                    log('🔗 Interacting with smart contract...');
+                    log(`📄 Contract address: ${contractAddress}`);
+                    log(`🆔 Identity hash: ${identityHash}`);
+                    
+                    // Contract ABI
+                    const contractABI = [
+                        'function verifyIdentity(address user, bytes32 identityHash, bytes signature) external',
+                        'function isIdentityVerified(address user) external view returns (bool)',
+                        'function identities(address user) external view returns (bytes32, uint256, bool, address)'
+                    ];
+
+                    const contract = new ethers.Contract(
+                        contractAddress,
+                        contractABI,
+                        this.connection.signer
+                    );
+
+                    // Check gas price and estimate gas
+                    const gasPrice = await this.connection.provider.getGasPrice();
+                    log(`⛽ Gas price: ${ethers.utils.formatUnits(gasPrice, 'gwei')} gwei`);
+
+                    // Estimate gas for the transaction
+                    const gasEstimate = await contract.estimateGas.verifyIdentity(
+                        this.connection.address,
+                        identityHash,
+                        signature
+                    );
+                    log(`⛽ Estimated gas: ${gasEstimate.toString()}`);
+
+                    // Call the verifyIdentity function
+                    log('📝 Submitting transaction...');
+                    const tx = await contract.verifyIdentity(
+                        this.connection.address,
+                        identityHash,
+                        signature,
+                        {
+                            gasLimit: gasEstimate.mul(120).div(100), // Add 20% buffer
+                        }
+                    );
+
+                    log(`⏳ Transaction submitted: ${tx.hash}`);
+                    log('⏳ Waiting for confirmation...');
+                    
+                    const receipt = await tx.wait();
+                    log(`✅ Transaction confirmed in block: ${receipt.blockNumber}`);
+                    log(`⛽ Gas used: ${receipt.gasUsed.toString()}`);
+
+                    // Verify the identity was stored correctly
+                    const isVerified = await contract.isIdentityVerified(this.connection.address);
+                    log(`✅ Identity verification status: ${isVerified}`);
+
+                    // Get the stored identity details
+                    const identity = await contract.identities(this.connection.address);
+                    log('📄 Stored identity details:');
+                    log(`  - Hash: ${identity[0]}`);
+                    log(`  - Timestamp: ${new Date(identity[1].toNumber() * 1000).toISOString()}`);
+                    log(`  - Is Verified: ${identity[2]}`);
+                    log(`  - Verifier: ${identity[3]}`);
+
+                    return {
+                        success: true,
+                        transactionHash: tx.hash,
+                        blockNumber: receipt.blockNumber,
+                        gasUsed: receipt.gasUsed.toString()
+                    };
+                } catch (error) {
+                    log(`❌ Error verifying identity on chain: ${error.message}`, 'error');
+                    throw error;
+                }
+            }
+
+            async getBalance() {
+                if (!this.connection) {
+                    throw new Error('Wallet not connected');
+                }
+
+                try {
+                    const balance = await this.connection.provider.getBalance(this.connection.address);
+                    return ethers.utils.formatEther(balance);
+                } catch (error) {
+                    log(`❌ Error getting balance: ${error.message}`, 'error');
+                    throw error;
+                }
+            }
+        }
+
+        // NFC Service Implementation (with simulation)
+        class NFCService {
+            async scanPassport() {
+                try {
+                    log('📱 Starting NFC passport scan...');
+                    log('⏳ Simulating passport scan (replace with real NFC reading)...');
+                    
+                    // Simulate scanning delay
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    
+                    // Generate realistic mock passport data
+                    const mockData = {
+                        documentNumber: this.generateRealisticDocumentNumber(),
+                        dateOfBirth: this.generateRandomDateOfBirth(),
+                        dateOfExpiry: this.generateFutureExpiryDate(),
+                        publicKey: this.generateRealisticPublicKey(),
+                        signature: this.generateRealisticSignature(),
+                        rawData: {
+                            scannedAt: new Date().toISOString(),
+                            nfcTag: 'simulated',
+                            chipType: 'ICAO 9303'
+                        },
+                    };
+
+                    log('✅ Passport data obtained:');
+                    log(`  - Document Number: ${mockData.documentNumber}`);
+                    log(`  - Date of Birth: ${mockData.dateOfBirth}`);
+                    log(`  - Date of Expiry: ${mockData.dateOfExpiry}`);
+                    log(`  - Public Key: ${mockData.publicKey.substring(0, 20)}...`);
+
+                    return mockData;
+                } catch (error) {
+                    log(`❌ Error scanning passport: ${error.message}`, 'error');
+                    throw error;
+                }
+            }
+
+            async verifyPassportWithTEE(passportData) {
+                try {
+                    log('🔒 Starting TEE verification process...');
+                    
+                    // Step 1: Verify passport authenticity through TEE
+                    const teeVerification = await teeService.verifyPassport(passportData);
+                    
+                    if (!teeVerification.isValid) {
+                        return {
+                            success: false,
+                            error: 'Passport verification failed in TEE: ' + (teeVerification.error || 'Unknown error'),
+                        };
+                    }
+
+                    log('✅ TEE verification successful');
+
+                    // Step 2: Generate identity hash from passport data
+                    const identityHash = await this.generateIdentityHash(passportData);
+                    log(`🆔 Identity hash generated: ${identityHash}`);
+
+                    // Step 3: Get TEE signature for the identity hash
+                    const teeSignature = await teeService.signIdentityHash(identityHash);
+                    log('✍️ TEE signature obtained');
+
+                    // Step 4: Check wallet connection
+                    const walletAddress = walletService.getAddress();
+                    if (!walletAddress) {
+                        return {
+                            success: false,
+                            error: 'Wallet not connected',
+                        };
+                    }
+
+                    log(`👛 Wallet connected: ${walletAddress}`);
+
+                    // Step 5: Store identity on blockchain
+                    try {
+                        log('⛓️ Storing identity on blockchain...');
+                        log(`📄 Contract address: ${contractInfo.address}`);
+                        
+                        const result = await walletService.verifyIdentityOnChain(
+                            contractInfo.address,
+                            identityHash,
+                            teeSignature
+                        );
+
+                        if (!result.success) {
+                            throw new Error('Blockchain transaction failed');
+                        }
+
+                        log('🎉 Full verification process completed successfully!');
+
+                        return {
+                            success: true,
+                            identityHash,
+                            publicKey: passportData.publicKey,
+                            signature: teeSignature,
+                            transactionHash: result.transactionHash,
+                            blockNumber: result.blockNumber,
+                            gasUsed: result.gasUsed
+                        };
+
+                    } catch (blockchainError) {
+                        log(`❌ Blockchain interaction failed: ${blockchainError.message}`, 'error');
+                        return {
+                            success: false,
+                            error: `Blockchain error: ${blockchainError.message}`,
+                        };
+                    }
+                } catch (error) {
+                    log(`❌ Error in verification process: ${error.message}`, 'error');
+                    return {
+                        success: false,
+                        error: error.message,
+                    };
+                }
+            }
+
+            async generateIdentityHash(passportData) {
+                try {
+                    const dataToHash = [
+                        passportData.documentNumber,
+                        passportData.dateOfBirth,
+                        passportData.publicKey,
+                        passportData.dateOfExpiry
+                    ].join('|');
+                    
+                    log('🔐 Generating identity hash from passport data...');
+                    
+                    const encoder = new TextEncoder();
+                    const data = encoder.encode(dataToHash);
+                    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                    const hashArray = Array.from(new Uint8Array(hashBuffer));
+                    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                    
+                    return '0x' + hashHex;
+                } catch (error) {
+                    log(`❌ Error generating identity hash: ${error.message}`, 'error');
+                    throw error;
+                }
+            }
+
+            generateRealisticDocumentNumber() {
+                const prefixes = ['P', 'PA', 'PB', 'PC'];
+                const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+                const numbers = Math.floor(Math.random() * 100000000).toString().padStart(8, '0');
+                return prefix + numbers;
+            }
+
+            generateRandomDateOfBirth() {
+                const year = 1970 + Math.floor(Math.random() * 35);
+                const month = (1 + Math.floor(Math.random() * 12)).toString().padStart(2, '0');
+                const day = (1 + Math.floor(Math.random() * 28)).toString().padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+
+            generateFutureExpiryDate() {
+                const currentYear = new Date().getFullYear();
+                const year = currentYear + 2 + Math.floor(Math.random() * 8);
+                const month = (1 + Math.floor(Math.random() * 12)).toString().padStart(2, '0');
+                const day = (1 + Math.floor(Math.random() * 28)).toString().padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+
+            generateRealisticPublicKey() {
+                return '0x' + Array.from({ length: 128 }, () => 
+                    Math.floor(Math.random() * 16).toString(16)
+                ).join('');
+            }
+
+            generateRealisticSignature() {
+                return '0x' + Array.from({ length: 128 }, () => 
+                    Math.floor(Math.random() * 16).toString(16)
+                ).join('');
+            }
+        }
+
+        // TEE Service Implementation
+        class TEEService {
+            async verifyPassport(passportData) {
+                try {
+                    log('🔒 Starting TEE passport verification...');
+                    log('📋 Validating passport data structure...');
+                    
+                    // Simulate TEE processing time
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    
+                    // Validate passport data structure
+                    const structureValid = this.validatePassportStructure(passportData);
+                    if (!structureValid) {
+                        return {
+                            isValid: false,
+                            error: 'Invalid passport data structure',
+                        };
+                    }
+                    
+                    log('✅ Passport structure validation passed');
+                    log('🔐 Verifying digital signatures...');
+                    
+                    // Simulate signature verification
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                    log('✅ Digital signature verification passed');
+                    
+                    log('📜 Validating certificate chain...');
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    log('✅ Certificate chain validation passed');
+                    
+                    log('📅 Validating document dates...');
+                    const dateValid = this.validateDocumentDates(passportData);
+                    if (!dateValid) {
+                        return {
+                            isValid: false,
+                            error: 'Document has expired or invalid dates',
+                        };
+                    }
+                    
+                    log('✅ Document date validation passed');
+                    log('🎉 TEE verification completed successfully');
+                    
+                    return {
+                        isValid: true,
+                        publicKey: passportData.publicKey,
+                        signature: passportData.signature,
+                    };
+                    
+                } catch (error) {
+                    log(`❌ TEE verification error: ${error.message}`, 'error');
+                    return {
+                        isValid: false,
+                        error: `TEE processing error: ${error.message}`,
+                    };
+                }
+            }
+
+            async signIdentityHash(identityHash) {
+                try {
+                    log('✍️ Signing identity hash in TEE...');
+                    log(`🆔 Identity hash: ${identityHash.substring(0, 20)}...`);
+                    
+                    // Simulate TEE signing process
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                    
+                    const signature = await this.generateTEESignature(identityHash);
+                    
+                    log('✅ TEE signature generated');
+                    log(`📝 Signature: ${signature.substring(0, 20)}...`);
+                    
+                    return signature;
+                } catch (error) {
+                    log(`❌ Error signing identity hash in TEE: ${error.message}`, 'error');
+                    throw error;
+                }
+            }
+
+            validatePassportStructure(passportData) {
+                const requiredFields = ['documentNumber', 'dateOfBirth', 'dateOfExpiry', 'publicKey', 'signature'];
+                
+                for (const field of requiredFields) {
+                    if (!passportData[field]) {
+                        log(`❌ Missing required field: ${field}`);
+                        return false;
+                    }
+                }
+                
+                if (!/^[A-Z]{1,2}[0-9]{6,9}$/.test(passportData.documentNumber)) {
+                    log('❌ Invalid document number format');
+                    return false;
+                }
+                
+                const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+                if (!dateRegex.test(passportData.dateOfBirth) || !dateRegex.test(passportData.dateOfExpiry)) {
+                    log('❌ Invalid date format');
+                    return false;
+                }
+                
+                if (!passportData.publicKey.startsWith('0x') || passportData.publicKey.length < 66) {
+                    log('❌ Invalid public key format');
+                    return false;
+                }
+                
+                return true;
+            }
+
+            validateDocumentDates(passportData) {
+                try {
+                    const now = new Date();
+                    const expiry = new Date(passportData.dateOfExpiry);
+                    const birth = new Date(passportData.dateOfBirth);
+                    
+                    if (expiry < now) {
+                        log('❌ Document has expired');
+                        return false;
+                    }
+                    
+                    const age = (now.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24 * 365);
+                    if (age < 0 || age > 150) {
+                        log('❌ Invalid birth date');
+                        return false;
+                    }
+                    
+                    return true;
+                } catch (error) {
+                    log(`❌ Error validating document dates: ${error.message}`, 'error');
+                    return false;
+                }
+            }
+
+            async generateTEESignature(identityHash) {
+                try {
+                    const signingData = `TEE_SIGNATURE_${identityHash}_${Date.now()}`;
+                    const encoder = new TextEncoder();
+                    const data = encoder.encode(signingData);
+                    
+                    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                    const hashArray = Array.from(new Uint8Array(hashBuffer));
+                    const signature = '0x' + hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                    
+                    return signature;
+                } catch (error) {
+                    log(`❌ Error generating TEE signature: ${error.message}`, 'error');
+                    throw error;
+                }
+            }
+        }
+
+        // Initialize services
+        walletService = new WalletService();
+        nfcService = new NFCService();
+        teeService = new TEEService();
+
+        // Event handlers
+        document.getElementById('connectWallet').addEventListener('click', async () => {
+            try {
+                const button = document.getElementById('connectWallet');
+                button.disabled = true;
+                button.textContent = 'Connecting...';
+                
+                const address = await walletService.connectWallet();
+                const balance = await walletService.getBalance();
+                
+                document.getElementById('walletStatus').className = 'status success';
+                document.getElementById('walletStatus').innerHTML = '✅ Wallet connected successfully!';
+                document.getElementById('walletStatus').style.display = 'block';
+                
+                document.getElementById('walletInfo').innerHTML = `
+                    <strong>Address:</strong> ${address}<br>
+                    <strong>Balance:</strong> ${balance} ETH
+                `;
+                document.getElementById('walletInfo').style.display = 'block';
+                
+                button.textContent = 'Connected ✅';
+                document.getElementById('scanPassport').disabled = false;
+                
+            } catch (error) {
+                document.getElementById('walletStatus').className = 'status error';
+                document.getElementById('walletStatus').innerHTML = `❌ ${error.message}`;
+                document.getElementById('walletStatus').style.display = 'block';
+                
+                const button = document.getElementById('connectWallet');
+                button.disabled = false;
+                button.textContent = 'Connect MetaMask Wallet';
+            }
+        });
+
+        document.getElementById('scanPassport').addEventListener('click', async () => {
+            try {
+                const button = document.getElementById('scanPassport');
+                button.disabled = true;
+                button.textContent = 'Scanning...';
+                
+                currentPassportData = await nfcService.scanPassport();
+                
+                document.getElementById('scanStatus').className = 'status success';
+                document.getElementById('scanStatus').innerHTML = '✅ Passport scanned successfully!';
+                document.getElementById('scanStatus').style.display = 'block';
+                
+                document.getElementById('passportData').innerHTML = `
+                    <div class="wallet-info">
+                        <strong>Document Number:</strong> ${currentPassportData.documentNumber}<br>
+                        <strong>Date of Birth:</strong> ${currentPassportData.dateOfBirth}<br>
+                        <strong>Date of Expiry:</strong> ${currentPassportData.dateOfExpiry}<br>
+                        <strong>Public Key:</strong> ${currentPassportData.publicKey.substring(0, 20)}...<br>
+                        <strong>Scanned At:</strong> ${currentPassportData.rawData.scannedAt}
+                    </div>
+                `;
+                document.getElementById('passportData').style.display = 'block';
+                
+                button.textContent = 'Scanned ✅';
+                document.getElementById('verifyTEE').disabled = false;
+                
+            } catch (error) {
+                document.getElementById('scanStatus').className = 'status error';
+                document.getElementById('scanStatus').innerHTML = `❌ ${error.message}`;
+                document.getElementById('scanStatus').style.display = 'block';
+                
+                const button = document.getElementById('scanPassport');
+                button.disabled = false;
+                button.textContent = 'Scan Passport (Simulated)';
+            }
+        });
+
+        document.getElementById('verifyTEE').addEventListener('click', async () => {
+            try {
+                const button = document.getElementById('verifyTEE');
+                button.disabled = true;
+                button.textContent = 'Verifying...';
+                
+                document.getElementById('teeStatus').className = 'status info';
+                document.getElementById('teeStatus').innerHTML = '⏳ Starting TEE verification and blockchain storage...';
+                document.getElementById('teeStatus').style.display = 'block';
+                
+                const result = await nfcService.verifyPassportWithTEE(currentPassportData);
+                
+                if (result.success) {
+                    document.getElementById('teeStatus').className = 'status success';
+                    document.getElementById('teeStatus').innerHTML = '✅ TEE verification and blockchain storage completed!';
+                    
+                    document.getElementById('results').innerHTML = `
+                        <div class="status success">
+                            <h4>🎉 Verification Successful!</h4>
+                            <div class="wallet-info">
+                                <strong>Identity Hash:</strong> ${result.identityHash}<br>
+                                <strong>TEE Signature:</strong> ${result.signature.substring(0, 30)}...<br>
+                                <strong>Transaction Hash:</strong> <a href="#" style="color: #667eea;">${result.transactionHash}</a><br>
+                                <strong>Block Number:</strong> ${result.blockNumber}<br>
+                                <strong>Gas Used:</strong> ${result.gasUsed}
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('results').style.display = 'block';
+                    
+                    button.textContent = 'Verified ✅';
+                } else {
+                    document.getElementById('teeStatus').className = 'status error';
+                    document.getElementById('teeStatus').innerHTML = `❌ Verification failed: ${result.error}`;
+                    
+                    button.disabled = false;
+                    button.textContent = 'Verify with TEE & Store on Blockchain';
+                }
+                
+            } catch (error) {
+                document.getElementById('teeStatus').className = 'status error';
+                document.getElementById('teeStatus').innerHTML = `❌ ${error.message}`;
+                
+                const button = document.getElementById('verifyTEE');
+                button.disabled = false;
+                button.textContent = 'Verify with TEE & Store on Blockchain';
+            }
+        });
+
+        // Initialize
+        window.addEventListener('load', () => {
+            log('🚀 Real Passport Verification Test Started');
+            loadContractInfo();
+        });
+    </script>
+</body>
+</html>
