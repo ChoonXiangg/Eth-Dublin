@@ -1,0 +1,127 @@
+{
+  "testPassports": [
+    {
+      "id": "test-passport-001",
+      "name": "Primary Test Passport",
+      "personalInfo": {
+        "firstName": "John",
+        "lastName": "Doe",
+        "fullName": "JOHN MICHAEL DOE",
+        "nationality": "USA",
+        "gender": "M",
+        "dateOfBirth": "1990-05-15",
+        "placeOfBirth": "New York, NY, USA"
+      },
+      "documentInfo": {
+        "documentType": "P",
+        "documentNumber": "PA123456789",
+        "issuingCountry": "USA",
+        "issuingAuthority": "United States Department of State",
+        "issueDate": "2022-03-10",
+        "expiryDate": "2032-03-10"
+      },
+      "biometricInfo": {
+        "photoHash": "b5d4c12e8f3a7d9c2b1a8e7f6d5c4b3a2e1f9d8c7b6a5e4d3c2b1a0f9e8d7c6b",
+        "fingerprintHashes": [
+          "a1b2c3d4e5f6789012345678901234567890abcdef",
+          "fedcba0987654321098765432109876543210fedcba"
+        ]
+      },
+      "cryptographicData": {
+        "publicKey": "0x04a2b1c8d4e5f6789012345678901234567890abcdef1234567890abcdef123456789012345678901234567890abcdef1234567890abcdef1234567890abcdef",
+        "signature": "0x3045022100b1a2c3d4e5f6789012345678901234567890abcdef1234567890abcdef1234567802205e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f",
+        "certificateChain": [
+          "MIIC5TCCAc2gAwIBAgIJAK...",
+          "MIID8DCCAtigAwIBAgIJAL..."
+        ],
+        "hashAlgorithm": "SHA-256"
+      },
+      "securityFeatures": {
+        "mrzLine1": "P<USADOE<<JOHN<MICHAEL<<<<<<<<<<<<<<<<<<<<<<<",
+        "mrzLine2": "PA1234567892USA9005155M3203106<<<<<<<<<<<<<<<8",
+        "chipAuthenticationStatus": "SUCCESS",
+        "activeAuthenticationStatus": "SUCCESS",
+        "passiveAuthenticationStatus": "SUCCESS"
+      },
+      "nfcData": {
+        "chipId": "NFC_CHIP_001",
+        "dataGroups": {
+          "DG1": "mrz_data_encoded",
+          "DG2": "facial_image_data",
+          "DG3": "fingerprint_data",
+          "DG4": "iris_data",
+          "DG11": "additional_personal_data",
+          "DG12": "additional_document_data",
+          "DG14": "security_infos",
+          "DG15": "active_authentication_public_key"
+        },
+        "securityObjectHash": "c9b8a7d6e5f4321098765432109876543210fedcba0987654321098765432109"
+      }
+    },
+    {
+      "id": "test-passport-002", 
+      "name": "Secondary Test Passport",
+      "personalInfo": {
+        "firstName": "Emily",
+        "lastName": "Smith",
+        "fullName": "EMILY ANNE SMITH",
+        "nationality": "GBR",
+        "gender": "F",
+        "dateOfBirth": "1985-08-22",
+        "placeOfBirth": "London, GBR"
+      },
+      "documentInfo": {
+        "documentType": "P",
+        "documentNumber": "PB987654321",
+        "issuingCountry": "GBR",
+        "issuingAuthority": "HM Passport Office",
+        "issueDate": "2021-11-15",
+        "expiryDate": "2031-11-15"
+      },
+      "biometricInfo": {
+        "photoHash": "f8e7d6c5b4a3928176543210fedcba0987654321098765432109876543210fedc",
+        "fingerprintHashes": [
+          "9876543210fedcba0987654321098765432109876543",
+          "abcdef1234567890abcdef1234567890abcdef123456"
+        ]
+      },
+      "cryptographicData": {
+        "publicKey": "0x048765432109876543210987654321098765432109876543210987654321098765432109876543210987654321098765432109876543210987654321098765432109",
+        "signature": "0x3046022100987654321098765432109876543210987654321098765432109876543210987654022100abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab",
+        "certificateChain": [
+          "MIIC6TCCAc2gAwIBAgIJAM...",
+          "MIID9DCCAtigAwIBAgIJAK..."
+        ],
+        "hashAlgorithm": "SHA-256"
+      },
+      "securityFeatures": {
+        "mrzLine1": "P<GBRSMITH<<EMILY<ANNE<<<<<<<<<<<<<<<<<<<<<<<<<",
+        "mrzLine2": "PB9876543211GBR8508225F3111156<<<<<<<<<<<<<<<4",
+        "chipAuthenticationStatus": "SUCCESS",
+        "activeAuthenticationStatus": "SUCCESS", 
+        "passiveAuthenticationStatus": "SUCCESS"
+      },
+      "nfcData": {
+        "chipId": "NFC_CHIP_002",
+        "dataGroups": {
+          "DG1": "mrz_data_encoded_gbr",
+          "DG2": "facial_image_data_gbr",
+          "DG3": "fingerprint_data_gbr",
+          "DG4": "iris_data_gbr",
+          "DG11": "additional_personal_data_gbr",
+          "DG12": "additional_document_data_gbr",
+          "DG14": "security_infos_gbr",
+          "DG15": "active_authentication_public_key_gbr"
+        },
+        "securityObjectHash": "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef12"
+      }
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "created": "2024-05-24",
+    "description": "Mock passport data for testing passport verification system",
+    "compliance": "ICAO 9303 compliant structure",
+    "security": "All data is fictional and for testing purposes only"
+  }
+} 
