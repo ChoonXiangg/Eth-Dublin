@@ -35,44 +35,6 @@
 *.tsbuildinfo
 next-env.d.ts
 
-# ===== MOBILE APP (React Native) =====
-# React Native dependencies
-MobileApp/node_modules/
-MobileApp/.expo/
-MobileApp/.expo-shared/
-
-# Metro bundler cache
-MobileApp/.metro-health-check*
-MobileApp/metro-cache/
-
-# iOS build files
-MobileApp/ios/build/
-MobileApp/ios/Pods/
-MobileApp/ios/*.xcworkspace/xcuserdata/
-MobileApp/ios/*.xcworkspace/project.xcworkspace/xcuserdata/
-MobileApp/ios/DerivedData/
-
-# Android build files
-MobileApp/android/app/build/
-MobileApp/android/build/
-MobileApp/android/.gradle/
-MobileApp/android/app/release/
-MobileApp/android/app/debug/
-MobileApp/android/.cxx/
-MobileApp/android/local.properties
-
-# React Native logs
-MobileApp/npm-debug.log*
-MobileApp/yarn-debug.log*
-MobileApp/yarn-error.log*
-
-# CocoaPods (iOS)
-MobileApp/ios/Podfile.lock
-
-# Flipper
-MobileApp/ios/Flipper-Folly
-MobileApp/android/app/src/debug/java/com/*/ReactNativeFlipper.java
-
 # ===== BLOCKCHAIN (Hardhat) =====
 # Hardhat dependencies
 MobilePass/node_modules/
@@ -232,9 +194,3 @@ dist/
 # ===== PACKAGE MANAGERS =====
 # npm
 package-lock.json.bak
-
-# Yarn
-yarn.lock.bak
-
-# pnpm
-pnpm-lock.yaml.bak
