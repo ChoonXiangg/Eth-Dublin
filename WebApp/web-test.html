@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passport Verification App - UI Test</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            min-height: 600px;
+        }
+        
+        .header {
+            padding: 20px;
+            display: flex;
+            justify-content: flex-end;
+            background: #f5f5f5;
+        }
+        
+        .connect-button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .connect-button:hover {
+            background: #0051D5;
+        }
+        
+        .connect-button.connected {
+            background: #28a745;
+        }
+        
+        .main-content {
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+        }
+        
+        .scan-bubble {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+            min-width: 280px;
+        }
+        
+        .scan-bubble:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        
+        .scan-bubble.scanning {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+        }
+        
+        .scan-text {
+            font-size: 18px;
+            color: #333;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        
+        .loading-indicator {
+            font-size: 24px;
+            margin-top: 10px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .wallet-info {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .wallet-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .wallet-address {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 300px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+        
+        .modal-message {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .modal-button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .status {
+            margin: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header with Connect Wallet Button -->
+        <div class="header">
+            <button id="connectBtn" class="connect-button">
+                Connect Wallet
+            </button>
+        </div>
+
+        <!-- Status Display -->
+        <div id="status" class="status" style="display: none;"></div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div id="scanBubble" class="scan-bubble">
+                <div class="scan-text" id="scanText">
+                    Place your passport on the NFC reader
+                </div>
+                <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+                    📱
+                </div>
+            </div>
+
+            <div id="walletInfo" class="wallet-info" style="display: none;">
+                <div class="wallet-label">Connected Wallet:</div>
+                <div class="wallet-address" id="walletAddress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">✅ Wallet Connected Successfully!</div>
+            <div class="modal-message">
+                You can now scan your passport for identity verification.
+            </div>
+            <button class="modal-button" onclick="closeModal()">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // Mock wallet address
+        let isWalletConnected = false;
+        let walletAddress = '';
+        let isScanning = false;
+
+        // DOM elements
+        const connectBtn = document.getElementById('connectBtn');
+        const scanBubble = document.getElementById('scanBubble');
+        const scanText = document.getElementById('scanText');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const walletInfo = document.getElementById('walletInfo');
+        const walletAddressEl = document.getElementById('walletAddress');
+        const successModal = document.getElementById('successModal');
+        const status = document.getElementById('status');
+
+        // Connect wallet function
+        connectBtn.addEventListener('click', async () => {
+            try {
+                showStatus('Connecting wallet...', 'success');
+                
+                // Simulate wallet connection delay
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Mock wallet address
+                walletAddress = '0x1234567890123456789012345678901234567890';
+                isWalletConnected = true;
+                
+                // Update UI
+                connectBtn.textContent = 'Wallet Connected';
+                connectBtn.classList.add('connected');
+                connectBtn.disabled = true;
+                
+                walletAddressEl.textContent = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+                walletInfo.style.display = 'block';
+                
+                // Show success modal
+                successModal.classList.add('show');
+                
+                showStatus('Wallet connected successfully!', 'success');
+                
+            } catch (error) {
+                showStatus('Failed to connect wallet', 'error');
+            }
+        });
+
+        // NFC scan function
+        scanBubble.addEventListener('click', async () => {
+            if (!isWalletConnected) {
+                showStatus('Wallet needs to be connected before scanning your passport.', 'error');
+                return;
+            }
+
+            if (isScanning) return;
+
+            try {
+                isScanning = true;
+                scanBubble.classList.add('scanning');
+                scanText.textContent = 'Scanning...';
+                loadingIndicator.style.display = 'block';
+                
+                showStatus('Scanning passport...', 'success');
+                
+                // Simulate scanning delay
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Simulate TEE verification
+                showStatus('Verifying through TEE...', 'success');
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Simulate blockchain interaction
+                showStatus('Storing identity on blockchain...', 'success');
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Success
+                showStatus('✅ Passport verified successfully! Your identity has been securely stored.', 'success');
+                
+            } catch (error) {
+                showStatus('❌ Scan failed: Please ensure your passport is properly placed on the NFC reader.', 'error');
+            } finally {
+                isScanning = false;
+                scanBubble.classList.remove('scanning');
+                scanText.textContent = 'Place your passport on the NFC reader';
+                loadingIndicator.style.display = 'none';
+            }
+        });
+
+        // Helper functions
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        function closeModal() {
+            successModal.classList.remove('show');
+        }
+
+        // Close modal when clicking outside
+        successModal.addEventListener('click', (e) => {
+            if (e.target === successModal) {
+                closeModal();
+            }
+        });
+
+        // Initialize
+        showStatus('App loaded successfully. Click "Connect Wallet" to start.', 'success');
+    </script>
+</body>
+</html> 
