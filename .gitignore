@@ -1,6 +1,8 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# 🛂 Zero-Knowledge Passport Verification - Git Ignore
+# Comprehensive ignore file for multi-component project
 
-# dependencies
+# ===== ROOT PROJECT (Next.js) =====
+# Dependencies
 /node_modules
 /.pnp
 .pnp.*
@@ -10,32 +12,229 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
-
-# next.js
+# Next.js build output
 /.next/
 /out/
-
-# production
 /build
 
-# misc
-.DS_Store
-*.pem
+# Testing
+/coverage
 
-# debug
+# Environment variables
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# ===== MOBILE APP (React Native) =====
+# React Native dependencies
+MobileApp/node_modules/
+MobileApp/.expo/
+MobileApp/.expo-shared/
+
+# Metro bundler cache
+MobileApp/.metro-health-check*
+MobileApp/metro-cache/
+
+# iOS build files
+MobileApp/ios/build/
+MobileApp/ios/Pods/
+MobileApp/ios/*.xcworkspace/xcuserdata/
+MobileApp/ios/*.xcworkspace/project.xcworkspace/xcuserdata/
+MobileApp/ios/DerivedData/
+
+# Android build files
+MobileApp/android/app/build/
+MobileApp/android/build/
+MobileApp/android/.gradle/
+MobileApp/android/app/release/
+MobileApp/android/app/debug/
+MobileApp/android/.cxx/
+MobileApp/android/local.properties
+
+# React Native logs
+MobileApp/npm-debug.log*
+MobileApp/yarn-debug.log*
+MobileApp/yarn-error.log*
+
+# CocoaPods (iOS)
+MobileApp/ios/Podfile.lock
+
+# Flipper
+MobileApp/ios/Flipper-Folly
+MobileApp/android/app/src/debug/java/com/*/ReactNativeFlipper.java
+
+# ===== BLOCKCHAIN (Hardhat) =====
+# Hardhat dependencies
+MobilePass/node_modules/
+
+# Hardhat build artifacts
+MobilePass/artifacts/
+MobilePass/cache/
+MobilePass/build/
+
+# Contract compilation
+MobilePass/typechain/
+MobilePass/typechain-types/
+
+# Gas reports
+MobilePass/gas-report.txt
+
+# Coverage reports
+MobilePass/coverage/
+MobilePass/coverage.json
+
+# Hardhat network files
+MobilePass/.openzeppelin/
+
+# ===== GENERAL DEVELOPMENT =====
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
 
-# vercel
-.vercel
+# Dependency directories
+node_modules/
+jspm_packages/
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# ===== OPERATING SYSTEMS =====
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# ===== EDITORS =====
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ===== SECURITY =====
+# Private keys (NEVER commit these!)
+*.pem
+*.key
+*.p12
+*.pfx
+
+# API keys and secrets
+.env.secrets
+secrets.json
+config/secrets.yml
+
+# ===== TEMPORARY FILES =====
+# Temporary folders
+tmp/
+temp/
+.tmp/
+
+# Test output
+test-results/
+test-output/
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# ===== PROJECT SPECIFIC =====
+# Setup and installation
+setup.log
+install.log
+
+# Demo recordings (large files)
+*.mov
+*.mp4
+*.avi
+*.mkv
+
+# Documentation builds
+docs/build/
+
+# Deployment
+deployment/
+dist/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# ===== PACKAGE MANAGERS =====
+# npm
+package-lock.json.bak
+
+# Yarn
+yarn.lock.bak
+
+# pnpm
+pnpm-lock.yaml.bak

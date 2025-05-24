@@ -2,22 +2,57 @@
   "name": "eth_dublin",
   "version": "0.1.0",
   "private": true,
+  "description": "Zero-Knowledge Passport Verification - Eth Dublin Hackathon",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "setup": "node setup.js",
+    "setup:mobile": "cd MobileApp && npm install",
+    "setup:blockchain": "cd MobilePass && npm install",
+    "dev:web": "next dev --turbopack",
+    "dev:mobile": "cd MobileApp && npm start",
+    "dev:blockchain": "cd MobilePass && npx hardhat node",
+    "dev:all": "concurrently \"npm run dev:web\" \"npm run dev:mobile\" \"npm run dev:blockchain\"",
+    "build:all": "npm run build && cd MobileApp && npm run android --release && cd ../MobilePass && npm run compile",
+    "test:all": "npm run lint && cd MobileApp && npm test && cd ../MobilePass && npm test",
+    "clean": "rimraf node_modules package-lock.json && cd MobileApp && rimraf node_modules package-lock.json && cd ../MobilePass && rimraf node_modules package-lock.json cache artifacts",
+    "install:all": "npm install && npm run setup:mobile && npm run setup:blockchain",
+    "deploy:blockchain": "cd MobilePass && npm run deploy",
+    "compile:contracts": "cd MobilePass && npm run compile"
   },
   "dependencies": {
+    "next": "15.1.8",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "next": "15.1.8"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1",
+    "@eslint/eslintrc": "^3",
+    "concurrently": "^8.2.2",
     "eslint": "^9",
     "eslint-config-next": "15.1.8",
-    "@eslint/eslintrc": "^3"
-  }
+    "postcss": "^8",
+    "rimraf": "^5.0.10",
+    "tailwindcss": "^3.4.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/Eth-Dublin.git"
+  },
+  "keywords": [
+    "blockchain",
+    "passport-verification",
+    "zero-knowledge-proofs",
+    "TEE",
+    "NFC",
+    "ethereum",
+    "hackathon",
+    "eth-dublin"
+  ],
+  "author": "Your Team Name",
+  "license": "MIT"
 }
