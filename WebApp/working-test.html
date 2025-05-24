@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Working Passport Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .panel h2 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            width: 100%;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+        }
+
+        .button:disabled {
+            background: linear-gradient(45deg, #9e9e9e, #757575);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button.primary { background: linear-gradient(45deg, #2196F3, #1976D2); }
+        .button.success { background: linear-gradient(45deg, #4CAF50, #388E3C); }
+        .button.warning { background: linear-gradient(45deg, #FF9800, #F57C00); }
+
+        .status {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #e0e0e0;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+
+        .log-entry.info { color: #2196F3; }
+        .log-entry.success { color: #4CAF50; }
+        .log-entry.warning { color: #FF9800; }
+        .log-entry.error { color: #f44336; }
+
+        .wallet-info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: white;
+            word-break: break-all;
+        }
+
+        .hidden { display: none; }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+
+        select option {
+            background: #4a5568;
+            color: white;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Working Passport Verification Test</h1>
+            <p>Simplified interface without external dependencies</p>
+        </div>
+
+        <div class="main-grid">
+            <!-- Wallet Connection Panel -->
+            <div class="panel">
+                <h2>👛 Wallet Connection</h2>
+                <button class="button primary" id="connectWalletBtn">Connect MetaMask</button>
+                <div class="wallet-info hidden" id="walletInfo">
+                    <strong>Connected:</strong>
+                    <div id="walletAddress"></div>
+                </div>
+            </div>
+
+            <!-- Test Passport Selection -->
+            <div class="panel">
+                <h2>📄 Test Passport</h2>
+                <select id="passportSelector">
+                    <option value="">Select a test passport...</option>
+                    <option value="test1">Test User 1 - John Smith (USA)</option>
+                    <option value="test2">Test User 2 - Emma Johnson (UK)</option>
+                    <option value="test3">Test User 3 - Hans Mueller (Germany)</option>
+                </select>
+                <button class="button success" id="startTestBtn" disabled>🚀 Start Test</button>
+                <button class="button warning" id="scanOnlyBtn" disabled>📱 Scan Only</button>
+            </div>
+
+            <!-- Real-time Logs -->
+            <div class="panel full-width">
+                <h2>📝 Test Logs</h2>
+                <div class="status" id="logContainer">
+                    <div class="log-entry info">🚀 Working test interface initialized</div>
+                    <div class="log-entry info">📋 Ready for simplified passport testing</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let isWalletConnected = false;
+        let selectedPassport = null;
+        let walletAddress = null;
+
+        // DOM elements
+        const logContainer = document.getElementById('logContainer');
+        const connectWalletBtn = document.getElementById('connectWalletBtn');
+        const walletInfo = document.getElementById('walletInfo');
+        const walletAddressDiv = document.getElementById('walletAddress');
+        const passportSelector = document.getElementById('passportSelector');
+        const startTestBtn = document.getElementById('startTestBtn');
+        const scanOnlyBtn = document.getElementById('scanOnlyBtn');
+
+        // Test passport data
+        const testPassports = {
+            test1: {
+                id: 'test1',
+                name: 'John Smith',
+                country: 'USA',
+                documentNumber: 'P123456789',
+                dateOfBirth: '1985-06-15',
+                expiryDate: '2030-06-15'
+            },
+            test2: {
+                id: 'test2',
+                name: 'Emma Johnson',
+                country: 'UK',
+                documentNumber: 'P987654321',
+                dateOfBirth: '1990-03-22',
+                expiryDate: '2029-03-22'
+            },
+            test3: {
+                id: 'test3',
+                name: 'Hans Mueller',
+                country: 'Germany',
+                documentNumber: 'P456789123',
+                dateOfBirth: '1982-11-08',
+                expiryDate: '2031-11-08'
+            }
+        };
+
+        // Logging function
+        function log(message, type = 'info') {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            console.log(`[WorkingTest] ${message}`);
+        }
+
+        // Connect to MetaMask
+        async function connectWallet() {
+            try {
+                log('🔄 Connecting to MetaMask wallet...', 'info');
+                connectWalletBtn.disabled = true;
+                connectWalletBtn.textContent = 'Connecting...';
+
+                // Check if MetaMask is available
+                if (typeof window.ethereum === 'undefined') {
+                    throw new Error('MetaMask not detected! Please install MetaMask extension.');
+                }
+
+                log('🦊 MetaMask detected', 'success');
+
+                // Request account access
+                const accounts = await window.ethereum.request({ 
+                    method: 'eth_requestAccounts' 
+                });
+
+                if (accounts.length === 0) {
+                    throw new Error('No accounts available');
+                }
+
+                walletAddress = accounts[0];
+                isWalletConnected = true;
+
+                // Check network
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                const chainIdDecimal = parseInt(chainId, 16);
+                
+                log(`🌐 Connected to Chain ID: ${chainIdDecimal}`, 'info');
+                
+                if (chainIdDecimal === 31337) {
+                    log('✅ Correct network: Hardhat Local (31337)', 'success');
+                } else {
+                    log(`⚠️ Warning: Expected Chain ID 31337, got ${chainIdDecimal}`, 'warning');
+                }
+
+                // Update UI
+                walletAddressDiv.textContent = walletAddress;
+                walletInfo.classList.remove('hidden');
+                connectWalletBtn.textContent = '✅ Wallet Connected';
+                
+                enableControls();
+                log(`✅ Wallet connected successfully: ${walletAddress}`, 'success');
+
+            } catch (error) {
+                log(`❌ Wallet connection failed: ${error.message}`, 'error');
+                connectWalletBtn.disabled = false;
+                connectWalletBtn.textContent = 'Connect MetaMask';
+                
+                if (error.code === 4001) {
+                    log('💡 User rejected the connection request', 'warning');
+                }
+            }
+        }
+
+        // Select passport
+        function selectPassport() {
+            const passportId = passportSelector.value;
+            
+            if (!passportId) {
+                selectedPassport = null;
+                updateControlsState();
+                return;
+            }
+
+            selectedPassport = testPassports[passportId];
+            log(`📋 Selected passport: ${selectedPassport.name} (${selectedPassport.country})`, 'info');
+            updateControlsState();
+        }
+
+        // Start full test
+        async function startFullTest() {
+            if (!isWalletConnected || !selectedPassport) {
+                log('❌ Wallet and passport selection required', 'error');
+                return;
+            }
+
+            try {
+                log('🚀 Starting passport verification test...', 'info');
+                disableControls();
+
+                // Step 1: Simulate NFC Scanning
+                log('📱 Step 1: Simulating NFC passport scanning...', 'info');
+                await delay(1500);
+                log(`✅ NFC scan completed - Document: ${selectedPassport.documentNumber}`, 'success');
+
+                // Step 2: Simulate TEE Verification
+                log('🔒 Step 2: Simulating TEE verification...', 'info');
+                await delay(2000);
+                const identityHash = generateMockHash(selectedPassport);
+                log(`✅ TEE verification completed - Hash: ${identityHash.substring(0, 16)}...`, 'success');
+
+                // Step 3: Simulate blockchain interaction
+                log('⛓️ Step 3: Simulating blockchain transaction...', 'info');
+                await delay(1000);
+                
+                const signature = await signMessage(`Test signature ${Date.now()}`);
+                if (signature) {
+                    log('✅ Message signed successfully', 'success');
+                    log(`📝 Signature: ${signature.substring(0, 20)}...`, 'info');
+                }
+
+                // Step 4: Complete
+                log('🎉 Full verification test completed successfully!', 'success');
+                log(`👤 Verified identity: ${selectedPassport.name}`, 'success');
+                log(`📄 Document: ${selectedPassport.documentNumber}`, 'info');
+                log(`🌍 Country: ${selectedPassport.country}`, 'info');
+
+            } catch (error) {
+                log(`❌ Test failed: ${error.message}`, 'error');
+            } finally {
+                enableControls();
+            }
+        }
+
+        // Scan only test
+        async function scanOnly() {
+            if (!selectedPassport) {
+                log('❌ Please select a test passport first', 'error');
+                return;
+            }
+
+            try {
+                log('📱 Starting passport scan simulation...', 'info');
+                await delay(1000);
+                
+                log('✅ Scan completed successfully', 'success');
+                log(`📊 Scanned data:`, 'info');
+                log(`  Name: ${selectedPassport.name}`, 'info');
+                log(`  Document: ${selectedPassport.documentNumber}`, 'info');
+                log(`  Country: ${selectedPassport.country}`, 'info');
+                log(`  DOB: ${selectedPassport.dateOfBirth}`, 'info');
+                log(`  Expires: ${selectedPassport.expiryDate}`, 'info');
+
+            } catch (error) {
+                log(`❌ Scan failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Sign a message with MetaMask
+        async function signMessage(message) {
+            try {
+                if (!window.ethereum || !walletAddress) {
+                    throw new Error('Wallet not connected');
+                }
+
+                // Use simple string message signing - MetaMask handles the encoding internally
+                const signature = await window.ethereum.request({
+                    method: 'personal_sign',
+                    params: [message, walletAddress]
+                });
+
+                return signature;
+            } catch (error) {
+                if (error.code === 4001) {
+                    log('💡 User rejected the signing request', 'warning');
+                } else {
+                    log(`❌ Signing failed: ${error.message}`, 'error');
+                }
+                return null;
+            }
+        }
+
+        // Utility functions
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function generateMockHash(passport) {
+            const data = `${passport.name}${passport.documentNumber}${passport.dateOfBirth}`;
+            return '0x' + Array.from(data).map(c => c.charCodeAt(0).toString(16)).join('').padEnd(64, '0');
+        }
+
+        function enableControls() {
+            if (isWalletConnected && selectedPassport) {
+                startTestBtn.disabled = false;
+                scanOnlyBtn.disabled = false;
+            } else if (selectedPassport) {
+                scanOnlyBtn.disabled = false;
+            }
+        }
+
+        function disableControls() {
+            startTestBtn.disabled = true;
+            scanOnlyBtn.disabled = true;
+        }
+
+        function updateControlsState() {
+            if (isWalletConnected && selectedPassport) {
+                startTestBtn.disabled = false;
+                scanOnlyBtn.disabled = false;
+            } else if (selectedPassport) {
+                startTestBtn.disabled = true;
+                scanOnlyBtn.disabled = false;
+            } else {
+                startTestBtn.disabled = true;
+                scanOnlyBtn.disabled = true;
+            }
+        }
+
+        // Event listeners
+        connectWalletBtn.addEventListener('click', connectWallet);
+        passportSelector.addEventListener('change', selectPassport);
+        startTestBtn.addEventListener('click', startFullTest);
+        scanOnlyBtn.addEventListener('click', scanOnly);
+
+        // Initialize
+        log('🎯 Working test interface ready!', 'success');
+    </script>
+</body>
+</html> 

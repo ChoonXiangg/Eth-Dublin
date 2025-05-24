@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Simple Test (No Signature)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        
+        .success { background: rgba(46, 204, 113, 0.3); }
+        .error { background: rgba(231, 76, 60, 0.3); }
+        .info { background: rgba(52, 152, 219, 0.3); }
+        
+        .log {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 15px 0;
+            white-space: pre-wrap;
+        }
+        
+        select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+        
+        select option {
+            background: #4a5568;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Simple Test (No Signature Required)</h1>
+        <div class="status info">
+            💡 This test simulates the entire passport verification process without requiring MetaMask signatures
+        </div>
+        
+        <h3>📄 Select Test Passport</h3>
+        <select id="passportSelector">
+            <option value="">Select a test passport...</option>
+            <option value="test1">Test User 1 - John Smith (USA)</option>
+            <option value="test2">Test User 2 - Emma Johnson (UK)</option>
+            <option value="test3">Test User 3 - Hans Mueller (Germany)</option>
+        </select>
+        
+        <button id="startTestBtn" disabled>🚀 Start Simulation</button>
+        <button onclick="clearLog()">🧹 Clear Log</button>
+        
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        let selectedPassport = null;
+
+        const passportSelector = document.getElementById('passportSelector');
+        const startTestBtn = document.getElementById('startTestBtn');
+        const logDiv = document.getElementById('log');
+
+        const testPassports = {
+            test1: {
+                name: 'John Smith',
+                country: 'USA',
+                documentNumber: 'P123456789',
+                dateOfBirth: '1985-06-15',
+                expiryDate: '2030-06-15'
+            },
+            test2: {
+                name: 'Emma Johnson', 
+                country: 'UK',
+                documentNumber: 'P987654321',
+                dateOfBirth: '1990-03-22',
+                expiryDate: '2029-03-22'
+            },
+            test3: {
+                name: 'Hans Mueller',
+                country: 'Germany', 
+                documentNumber: 'P456789123',
+                dateOfBirth: '1982-11-08',
+                expiryDate: '2031-11-08'
+            }
+        };
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logDiv.textContent += logEntry;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            logDiv.textContent = '';
+        }
+
+        function selectPassport() {
+            const passportId = passportSelector.value;
+            
+            if (!passportId) {
+                selectedPassport = null;
+                startTestBtn.disabled = true;
+                return;
+            }
+
+            selectedPassport = testPassports[passportId];
+            startTestBtn.disabled = false;
+            log(`📋 Selected passport: ${selectedPassport.name} (${selectedPassport.country})`, 'info');
+        }
+
+        async function startTest() {
+            if (!selectedPassport) {
+                log('❌ Please select a test passport first', 'error');
+                return;
+            }
+
+            try {
+                log('🚀 Starting passport verification simulation...', 'info');
+                startTestBtn.disabled = true;
+
+                // Step 1: NFC Scanning Simulation
+                log('📱 Step 1: Simulating NFC passport scanning...', 'info');
+                await delay(1500);
+                log(`✅ NFC scan completed - Document: ${selectedPassport.documentNumber}`, 'success');
+
+                // Step 2: TEE Verification
+                log('🔒 Step 2: Simulating TEE verification...', 'info');
+                await delay(2000);
+                const identityHash = generateMockHash(selectedPassport);
+                log(`✅ TEE verification completed - Hash: ${identityHash.substring(0, 16)}...`, 'success');
+
+                // Step 3: Mock Blockchain Interaction (NO SIGNATURE REQUIRED)
+                log('⛓️ Step 3: Simulating blockchain transaction...', 'info');
+                await delay(1000);
+                const mockSignature = generateMockSignature();
+                log('✅ Mock transaction completed (no MetaMask required)', 'success');
+                log(`📝 Mock Signature: ${mockSignature.substring(0, 20)}...`, 'info');
+
+                // Step 4: Complete
+                log('🎉 Full verification simulation completed successfully!', 'success');
+                log(`👤 Verified identity: ${selectedPassport.name}`, 'success');
+                log(`📄 Document: ${selectedPassport.documentNumber}`, 'info');
+                log(`🌍 Country: ${selectedPassport.country}`, 'info');
+                log('💡 No MetaMask popups were needed for this test!', 'info');
+
+            } catch (error) {
+                log(`❌ Test failed: ${error.message}`, 'error');
+            } finally {
+                startTestBtn.disabled = false;
+            }
+        }
+
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function generateMockHash(passport) {
+            const data = `${passport.name}${passport.documentNumber}${passport.dateOfBirth}`;
+            return '0x' + Array.from(data).map(c => c.charCodeAt(0).toString(16)).join('').padEnd(64, '0');
+        }
+
+        function generateMockSignature() {
+            return '0x' + Array.from({length: 130}, () => Math.floor(Math.random() * 16).toString(16)).join('');
+        }
+
+        // Event listeners
+        passportSelector.addEventListener('change', selectPassport);
+        startTestBtn.addEventListener('click', startTest);
+
+        // Initialize
+        log('🎯 Simple test interface ready!', 'info');
+        log('💡 No MetaMask connection or signatures required', 'info');
+    </script>
+</body>
+</html> 

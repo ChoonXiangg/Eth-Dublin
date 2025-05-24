@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Quick Fixed Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        
+        .success { background: rgba(46, 204, 113, 0.3); }
+        .error { background: rgba(231, 76, 60, 0.3); }
+        .info { background: rgba(52, 152, 219, 0.3); }
+        
+        .log {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 15px 0;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Quick Fixed Test</h1>
+        
+        <button id="connectBtn">Connect MetaMask</button>
+        <div id="walletStatus" style="display: none;"></div>
+        
+        <button id="signBtn" disabled>Test Message Signing</button>
+        <div id="signResult" style="display: none;"></div>
+        
+        <div id="log" class="log"></div>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <script>
+        let walletAddress = null;
+        let isConnected = false;
+
+        const connectBtn = document.getElementById('connectBtn');
+        const signBtn = document.getElementById('signBtn');
+        const walletStatus = document.getElementById('walletStatus');
+        const signResult = document.getElementById('signResult');
+        const logDiv = document.getElementById('log');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logDiv.textContent += logEntry;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            logDiv.textContent = '';
+        }
+
+        async function connectWallet() {
+            try {
+                log('🔄 Connecting to MetaMask...', 'info');
+                connectBtn.disabled = true;
+
+                if (typeof window.ethereum === 'undefined') {
+                    throw new Error('MetaMask not detected!');
+                }
+
+                log('🦊 MetaMask detected', 'info');
+
+                const accounts = await window.ethereum.request({ 
+                    method: 'eth_requestAccounts' 
+                });
+
+                if (accounts.length === 0) {
+                    throw new Error('No accounts available');
+                }
+
+                walletAddress = accounts[0];
+                isConnected = true;
+
+                // Check network
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                const chainIdDecimal = parseInt(chainId, 16);
+                
+                log(`🌐 Connected to Chain ID: ${chainIdDecimal}`, 'info');
+
+                // Update UI
+                walletStatus.innerHTML = `<div class="status success">✅ Connected: ${walletAddress}</div>`;
+                walletStatus.style.display = 'block';
+                connectBtn.textContent = '✅ Wallet Connected';
+                signBtn.disabled = false;
+                
+                log(`✅ Wallet connected successfully: ${walletAddress}`, 'success');
+
+            } catch (error) {
+                log(`❌ Connection failed: ${error.message}`, 'error');
+                connectBtn.disabled = false;
+                connectBtn.textContent = 'Connect MetaMask';
+            }
+        }
+
+        async function testSigning() {
+            try {
+                log('✍️ Testing message signing...', 'info');
+                signBtn.disabled = true;
+
+                if (!window.ethereum || !walletAddress) {
+                    throw new Error('Wallet not connected');
+                }
+
+                const message = `Test signature at ${new Date().toISOString()}`;
+                log(`📝 Message to sign: "${message}"`, 'info');
+
+                // Use simple string message signing - MetaMask handles the encoding internally
+                const signature = await window.ethereum.request({
+                    method: 'personal_sign',
+                    params: [message, walletAddress]
+                });
+
+                if (signature) {
+                    log('✅ Message signed successfully!', 'success');
+                    log(`📋 Signature: ${signature.substring(0, 20)}...`, 'info');
+                    
+                    signResult.innerHTML = `
+                        <div class="status success">
+                            ✅ Signing Test Successful!<br>
+                            <small>Signature: ${signature.substring(0, 30)}...</small>
+                        </div>
+                    `;
+                    signResult.style.display = 'block';
+                } else {
+                    throw new Error('No signature returned');
+                }
+
+            } catch (error) {
+                log(`❌ Signing failed: ${error.message}`, 'error');
+                
+                if (error.code === 4001) {
+                    log('💡 User rejected the signing request', 'warning');
+                } else {
+                    signResult.innerHTML = `<div class="status error">❌ Signing Failed: ${error.message}</div>`;
+                    signResult.style.display = 'block';
+                }
+            } finally {
+                signBtn.disabled = false;
+            }
+        }
+
+        // Event listeners
+        connectBtn.addEventListener('click', connectWallet);
+        signBtn.addEventListener('click', testSigning);
+
+        // Initialize
+        log('🎯 Quick test interface ready!', 'info');
+        log('💡 This tests the fixed signing functionality', 'info');
+    </script>
+</body>
+</html> 
