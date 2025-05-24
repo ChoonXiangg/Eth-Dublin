@@ -106,18 +106,8 @@ function main() {
         process.exit(1);
     }
     
-    // Step 3: Install Mobile App dependencies
-    logStep(3, 'Installing Mobile App Dependencies (React Native)');
-    if (checkDirectory('MobileApp')) {
-        if (!runCommand('npm install', 'MobileApp', 'Installing React Native mobile app dependencies')) {
-            logWarning('Mobile app dependency installation failed - you may need to install manually');
-        }
-    } else {
-        logWarning('MobileApp directory not found - skipping mobile dependencies');
-    }
-    
-    // Step 4: Install Blockchain dependencies  
-    logStep(4, 'Installing Blockchain Dependencies (Hardhat)');
+    // Step 3: Install Blockchain dependencies  
+    logStep(3, 'Installing Blockchain Dependencies (Hardhat)');
     if (checkDirectory('MobilePass')) {
         if (!runCommand('npm install', 'MobilePass', 'Installing Hardhat blockchain dependencies')) {
             logWarning('Blockchain dependency installation failed - you may need to install manually');
@@ -126,20 +116,19 @@ function main() {
         logWarning('MobilePass directory not found - skipping blockchain dependencies');
     }
     
-    // Step 5: Compile smart contracts
-    logStep(5, 'Compiling Smart Contracts');
+    // Step 4: Compile smart contracts
+    logStep(4, 'Compiling Smart Contracts');
     if (checkDirectory('MobilePass')) {
         if (!runCommand('npm run compile', 'MobilePass', 'Compiling Solidity smart contracts')) {
             logWarning('Smart contract compilation failed - you may need to compile manually');
         }
     }
     
-    // Step 6: Verify installation
-    logStep(6, 'Verifying Installation');
+    // Step 5: Verify installation
+    logStep(5, 'Verifying Installation');
     
     const checks = [
         { path: 'package.json', description: 'Root package.json' },
-        { path: 'MobileApp/package.json', description: 'Mobile app package.json' },
         { path: 'MobilePass/package.json', description: 'Blockchain package.json' },
         { path: 'WebApp/comprehensive-test.html', description: 'Test interface' }
     ];
@@ -168,13 +157,8 @@ function main() {
     log('1. Start development: npm run dev:all', 'blue');
     log('2. Or start individual components:', 'blue');
     log('   • Web app: npm run dev', 'cyan');
-    log('   • Mobile app: npm run dev:mobile', 'cyan');
     log('   • Blockchain: npm run dev:blockchain', 'cyan');
     log('3. Open demo: WebApp/comprehensive-test.html', 'blue');
-    log('4. For mobile development, ensure you have:', 'yellow');
-    log('   • Android Studio (for Android)', 'yellow');
-    log('   • Xcode (for iOS on macOS)', 'yellow');
-    log('   • React Native CLI: npm install -g react-native-cli', 'yellow');
     
     log('\n🏆 Ready for Eth Dublin Hackathon demo!', 'green');
     log('Demo file: WebApp/comprehensive-test.html', 'cyan');

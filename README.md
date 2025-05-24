@@ -5,7 +5,6 @@ A comprehensive blockchain-based passport verification system using Zero-Knowled
 ## 🏗️ Project Architecture
 
 - **🌐 Web App**: Next.js web interface with React 19 and Tailwind CSS
-- **📱 Mobile App**: React Native app for NFC passport scanning with MetaMask integration  
 - **⛓️ Blockchain**: Hardhat infrastructure with IdentityVerification.sol smart contract
 - **🧪 Test Interface**: Static HTML files for comprehensive testing and demos
 
@@ -34,10 +33,7 @@ npm run dev:all
 # 1. Install root dependencies (Next.js web app)
 npm install
 
-# 2. Install Mobile App dependencies
-cd MobileApp && npm install && cd ..
-
-# 3. Install Blockchain dependencies  
+# 2. Install Blockchain dependencies  
 cd MobilePass && npm install && cd ..
 ```
 
@@ -54,21 +50,6 @@ npm run build
 
 # Start production server
 npm start
-```
-
-### 📱 Mobile Application
-**Tech Stack**: React Native 0.72.6, NFC Manager, Ethers.js
-```bash
-cd MobileApp
-
-# Start Metro bundler
-npm start
-
-# Run on Android
-npm run android
-
-# Run on iOS  
-npm run ios
 ```
 
 ### ⛓️ Blockchain Infrastructure
@@ -107,13 +88,6 @@ npm run clean        # Clean all node_modules and build artifacts
 
 ### Individual Project Scripts
 ```bash
-# Mobile App
-cd MobileApp
-npm start            # Start Metro bundler
-npm run android      # Run Android app
-npm run ios          # Run iOS app
-npm test             # Run tests
-
 # Blockchain
 cd MobilePass  
 npm run compile      # Compile contracts
@@ -126,9 +100,6 @@ npm test             # Run blockchain tests
 ### Required Software
 - **Node.js**: Version 16 or higher
 - **npm/yarn**: Latest version
-- **React Native CLI**: `npm install -g react-native-cli`
-- **Android Studio**: For Android development
-- **Xcode**: For iOS development (macOS only)
 - **MetaMask**: Browser extension for wallet integration
 
 ### Environment Variables
@@ -162,14 +133,7 @@ cd WebApp
 # - simple-test.html (no MetaMask required)
 ```
 
-### 3. Mobile App Testing
-```bash
-cd MobileApp
-npm start
-npm run android  # or npm run ios
-```
-
-### 4. Blockchain Testing
+### 3. Blockchain Testing
 ```bash
 cd MobilePass
 npm test
@@ -198,41 +162,26 @@ npm run deploy
 Eth-Dublin/
 ├── 📁 app/              # Next.js pages and components
 ├── 📁 public/           # Static assets
-├── 📁 WebApp/           # HTML test interfaces
-├── 📁 MobileApp/        # React Native mobile app
+├── 📁 WebApp/           # Static HTML test interfaces
 ├── 📁 MobilePass/       # Hardhat blockchain infrastructure
-├── 📄 package.json     # Root dependencies
-├── 📄 README.md         # This file
-└── 📄 setup.js          # Automated setup script
+├── 📄 package.json      # Root dependencies and scripts
+├── 📄 setup.js          # Automated setup script
+└── 📄 README.md         # This file
 ```
-
-## 🔒 Security Features
-
-- **TEE Integration**: Trusted Execution Environment for secure passport processing
-- **Zero-Knowledge Proofs**: Privacy-preserving identity verification
-- **NFC Security**: Secure passport chip reading
-- **Blockchain Storage**: Immutable verification records
-- **MetaMask Integration**: Secure wallet-based authentication
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+2. Create a feature branch
+3. Make your changes  
+4. Test thoroughly
+5. Submit a pull request
 
 ## 📄 License
 
-This project is part of the Eth Dublin Hackathon submission.
-
-## 🏆 Hackathon Submission
-
-**Team**: [Your Team Name]  
-**Hackathon**: Eth Dublin  
-**Category**: Privacy & Identity  
-**Demo**: `WebApp/comprehensive-test.html`
+MIT License - feel free to use this project for learning and development!
 
 ---
 
-🚀 **Ready to verify identities securely with Zero-Knowledge Proofs!** 🔒
+**🏆 Built for Eth Dublin Hackathon**  
+*Zero-Knowledge Passport Verification with TEE and Blockchain Technology*
