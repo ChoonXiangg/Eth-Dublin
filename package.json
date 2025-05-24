@@ -21,10 +21,15 @@
     "compile:contracts": "cd MobilePass && npm run compile"
   },
   "dependencies": {
-    "ethers": "^6.14.1",
+    "buffer": "^6.0.3",
+    "crypto-browserify": "^3.12.1",
+    "ethers": "^5.8.0",
     "next": "15.1.8",
+    "process": "^0.11.10",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "stream-browserify": "^3.0.0",
+    "util": "^0.12.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -50,7 +55,10 @@
     "NFC",
     "ethereum",
     "hackathon",
-    "eth-dublin"
+    "eth-dublin",
+    "secure-identity",
+    "webauthn",
+    "ipfs"
   ],
   "author": "Your Team Name",
   "license": "MIT"
