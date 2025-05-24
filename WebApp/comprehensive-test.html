@@ -384,9 +384,16 @@
                     <div class="log-entry info">📋 Ready for passport verification testing</div>
                 </div>
             </div>
+
+            <!-- On-Chain Status Panel -->
+            <div id="onChainStatus" class="panel" style="display:none; margin-top:20px; color:white; background:rgba(76,175,80,0.2);">
+                <h2>🔗 On-Chain Verification</h2>
+                <div id="onChainStatusContent">Checking on-chain status...</div>
+            </div>
         </div>
     </div>
 
+    <script src="ethers.umd.min.js"></script>
     <script>
         // All embedded - no external dependencies or module imports
         
@@ -766,6 +773,8 @@
                         this.updateStepStatus(6, 'completed');
                         this.log('✅ Step 6: Blockchain transaction completed', 'success');
                         this.log(`📝 Signature: ${signature.substring(0, 20)}...`, 'info');
+                        // Show on-chain status
+                        await this.showOnChainStatus(this.walletAddress, identityHash);
                     } else {
                         this.updateStepStatus(6, 'completed');
                         this.log('⚠️ Step 6: Blockchain transaction skipped (user declined)', 'warning');
@@ -1133,12 +1142,148 @@
                     }, 10000);
                 }
             }
+
+            async showOnChainStatus(address, identityHash) {
+                try {
+                    // Check if ethers is defined
+                    if (typeof ethers === 'undefined') {
+                        document.getElementById('onChainStatus').style.display = 'block';
+                        document.getElementById('onChainStatusContent').innerHTML =
+                            `<span style="color:#ff6b6b;">❌ Error: ethers is not defined.\\n` +
+                            `typeof ethers: ${typeof ethers}.\\n` +
+                            `Check if the ethers.js script is loaded and not blocked by browser extensions or Content Security Policy.\\n` +
+                            `Try opening the browser console (F12) and type 'ethers' to see if it is available.</span>`;
+                        return;
+                    }
+
+                    // Load contract info (adjust path if needed)
+                    const response = await fetch('./contract-info.json');
+                    const contractInfo = await response.json();
+                    const contractABI = contractInfo.abi;
+                    const contractAddress = contractInfo.address;
+
+                    // Ethers v6: Use BrowserProvider and getSigner
+                    const provider = new ethers.BrowserProvider(window.ethereum);
+                    const signer = await provider.getSigner();
+                    const contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+                    // Query the on-chain identity info
+                    let identity;
+                    try {
+                        identity = await contract.identities(address);
+                    } catch (contractError) {
+                        // Handle case where contract call fails
+                        document.getElementById('onChainStatus').style.display = 'block';
+                        document.getElementById('onChainStatusContent').innerHTML =
+                            `<span style="color:#ff6b6b;">❌ Failed to query contract: ${contractError.message}</span><br>
+                             <small>Make sure Hardhat local network is running and the contract is deployed.</small>`;
+                        return;
+                    }
+
+                    // Check if identity data exists (handle empty return)
+                    const identityHashFromChain = identity[0];
+                    const hasData = identityHashFromChain && identityHashFromChain !== '0x0000000000000000000000000000000000000000000000000000000000000000';
+                    
+                    document.getElementById('onChainStatus').style.display = 'block';
+                    
+                    if (hasData) {
+                        // Compare the stored hash with the generated one
+                        const isStored = identityHashFromChain.toLowerCase() === identityHash.toLowerCase();
+                        
+                        document.getElementById('onChainStatusContent').innerHTML = isStored
+                            ? `<span style="color:#51cf66;">✅ Public key (identity hash) is stored on-chain for this wallet!</span><br>
+                               <strong>On-chain Hash:</strong> ${identityHashFromChain}<br>
+                               <strong>Verified:</strong> ${identity[2] ? "✅" : "❌"}<br>
+                               <strong>Timestamp:</strong> ${new Date(identity[1] * 1000).toLocaleString()}<br>
+                               <strong>Verifier:</strong> ${identity[3]}`
+                            : `<span style="color:#ffd93d;">⚠️ Different identity hash stored on-chain for this wallet.</span><br>
+                               <strong>Expected Hash:</strong> ${identityHash}<br>
+                               <strong>On-chain Hash:</strong> ${identityHashFromChain}<br>
+                               <strong>Verified:</strong> ${identity[2] ? "✅" : "❌"}`;
+                    } else {
+                        // No data stored on-chain - show option to store it
+                        document.getElementById('onChainStatusContent').innerHTML = 
+                            `<span style="color:#ffd93d;">⚠️ No identity data stored on-chain for this wallet address.</span><br><br>
+                             <strong>Expected Hash:</strong> ${identityHash}<br><br>
+                             <button onclick="storeIdentityOnChain('${address}', '${identityHash}')" style="
+                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                color: white;
+                                border: none;
+                                padding: 10px 20px;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                font-weight: bold;
+                             ">🔗 Store Identity On-Chain</button>
+                             <br><small style="opacity: 0.8;">Click to actually store the identity hash on the blockchain</small>`;
+                    }
+                } catch (err) {
+                    document.getElementById('onChainStatus').style.display = 'block';
+                    document.getElementById('onChainStatusContent').innerHTML =
+                        `<span style="color:#ff6b6b;">❌ Error checking on-chain status: ${err.message}</span><br><br>
+                         <strong>Debug Info:</strong><br>
+                         <small>Error: ${err.message}<br>
+                         Address: ${address}<br>
+                         Network: Make sure you're connected to Hardhat Local (chainId: 31337)</small>`;
+                }
+            }
+
+            // Add this function to actually store identity on-chain
+            async storeIdentityOnChain(address, identityHash) {
+                try {
+                    this.log('🔗 Storing identity on blockchain...', 'info');
+                    
+                    // Load contract info
+                    const response = await fetch('./contract-info.json');
+                    const contractInfo = await response.json();
+                    const contractABI = contractInfo.abi;
+                    const contractAddress = contractInfo.address;
+
+                    // Get provider and signer
+                    const provider = new ethers.BrowserProvider(window.ethereum);
+                    const signer = await provider.getSigner();
+                    const contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+                    // Create a mock signature for the contract call
+                    const message = `Verification for ${identityHash}`;
+                    const signature = await this.signMessage(message);
+                    
+                    if (!signature) {
+                        this.log('❌ Signature required to store on-chain', 'error');
+                        return;
+                    }
+
+                    // Call verifyIdentity on the contract
+                    const tx = await contract.verifyIdentity(address, identityHash, signature);
+                    this.log(`📝 Transaction submitted: ${tx.hash}`, 'info');
+                    
+                    // Wait for confirmation
+                    const receipt = await tx.wait();
+                    this.log(`✅ Transaction confirmed in block ${receipt.blockNumber}`, 'success');
+                    
+                    // Refresh the on-chain status
+                    await this.showOnChainStatus(address, identityHash);
+                    
+                } catch (error) {
+                    this.log(`❌ Failed to store on-chain: ${error.message}`, 'error');
+                    if (error.message.includes('Invalid signature')) {
+                        this.log('💡 Note: This is expected as we are using mock TEE verification', 'warning');
+                    }
+                }
+            }
         }
 
         // Initialize the test interface when page loads
+        let comprehensiveTestInstance;
         document.addEventListener('DOMContentLoaded', () => {
-            new ComprehensiveTestInterface();
+            comprehensiveTestInstance = new ComprehensiveTestInterface();
         });
+
+        // Global function for button onclick
+        async function storeIdentityOnChain(address, identityHash) {
+            if (comprehensiveTestInstance) {
+                await comprehensiveTestInstance.storeIdentityOnChain(address, identityHash);
+            }
+        }
     </script>
 </body>
 </html> 
