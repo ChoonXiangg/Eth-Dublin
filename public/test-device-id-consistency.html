@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device ID Consistency Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            border-left: 4px solid #007bff;
+        }
+        .device-id {
+            background: #e7f3ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            word-break: break-all;
+        }
+        .success {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .stats {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Device ID Consistency Test</h1>
+        <p>This test verifies that the same device always generates the same device ID, even across page refreshes.</p>
+        
+        <div>
+            <button onclick="generateDeviceId()">Generate Device ID</button>
+            <button onclick="clearResults()">Clear Results</button>
+            <button onclick="location.reload()">Refresh Page</button>
+        </div>
+        
+        <div id="results"></div>
+        
+        <div class="stats">
+            <h3>📊 Test Statistics</h3>
+            <div id="stats"></div>
+        </div>
+
+        <div class="test-result">
+            <h3>🎯 Expected Behavior:</h3>
+            <ul>
+                <li>Same device should <strong>always</strong> generate the same device ID</li>
+                <li>Device ID should remain consistent across page refreshes</li>
+                <li>Device ID should remain consistent across browser restarts</li>
+                <li>Device ID should remain consistent across application rebuilds</li>
+            </ul>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import TEEService from the app
+        import { TEEService } from './app/services/TEEService.js';
+
+        let testResults = [];
+        let teeService = new TEEService();
+
+        window.generateDeviceId = async function() {
+            try {
+                console.log('🔒 Starting device ID generation test...');
+                
+                const startTime = performance.now();
+                const result = await teeService.generateDeviceKey();
+                const endTime = performance.now();
+                const duration = Math.round(endTime - startTime);
+                
+                const testResult = {
+                    deviceId: result.deviceAddress,
+                    deviceKey: result.deviceKey.slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join(''),
+                    fingerprint: result.attestationData.deviceFingerprint.substring(0, 16),
+                    timestamp: new Date().toLocaleTimeString(),
+                    duration: duration
+                };
+                
+                testResults.push(testResult);
+                updateDisplay();
+                
+                console.log('✅ Device ID generated:', testResult.deviceId);
+                
+            } catch (error) {
+                console.error('❌ Device ID generation failed:', error);
+                const errorResult = {
+                    error: error.message,
+                    timestamp: new Date().toLocaleTimeString()
+                };
+                testResults.push(errorResult);
+                updateDisplay();
+            }
+        };
+
+        window.clearResults = function() {
+            testResults = [];
+            updateDisplay();
+        };
+
+        function updateDisplay() {
+            const resultsDiv = document.getElementById('results');
+            const statsDiv = document.getElementById('stats');
+            
+            // Display results
+            resultsDiv.innerHTML = testResults.map((result, index) => {
+                if (result.error) {
+                    return `
+                        <div class="test-result warning">
+                            <strong>Test #${index + 1} - ${result.timestamp}</strong><br>
+                            ❌ Error: ${result.error}
+                        </div>
+                    `;
+                }
+                
+                const isConsistent = testResults.length === 1 || 
+                    testResults.slice(0, index).every(prev => !prev.error && prev.deviceId === result.deviceId);
+                
+                return `
+                    <div class="test-result ${isConsistent ? 'success' : 'warning'}">
+                        <strong>Test #${index + 1} - ${result.timestamp} (${result.duration}ms)</strong><br>
+                        ${isConsistent ? '✅' : '❌'} Device ID: 
+                        <div class="device-id">${result.deviceId}</div>
+                        📱 Device Key (first 8 bytes): ${result.deviceKey}...<br>
+                        🔍 Fingerprint: ${result.fingerprint}...
+                    </div>
+                `;
+            }).join('');
+            
+            // Display statistics
+            const uniqueDeviceIds = [...new Set(testResults.filter(r => !r.error).map(r => r.deviceId))];
+            const totalTests = testResults.length;
+            const successfulTests = testResults.filter(r => !r.error).length;
+            const consistencyRate = uniqueDeviceIds.length === 1 ? 100 : 0;
+            
+            statsDiv.innerHTML = `
+                <div><strong>Total Tests:</strong> ${totalTests}</div>
+                <div><strong>Successful:</strong> ${successfulTests}</div>
+                <div><strong>Failed:</strong> ${totalTests - successfulTests}</div>
+                <div><strong>Unique Device IDs:</strong> ${uniqueDeviceIds.length}</div>
+                <div><strong>Consistency Rate:</strong> ${consistencyRate}% ${consistencyRate === 100 ? '✅' : '❌'}</div>
+                ${uniqueDeviceIds.length > 0 ? `<div><strong>Current Device ID:</strong><br><code>${uniqueDeviceIds[0]}</code></div>` : ''}
+            `;
+        }
+
+        // Auto-run first test
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                generateDeviceId();
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 
