@@ -310,193 +310,195 @@ export default function SecurePassportIdentity() {
                   </div>
 
                   {/* iPhone Content */}
-                  <div className="flex-1 bg-gray-900 text-white p-6 flex flex-col">
+                  <div className="flex-1 bg-gray-900 text-white flex flex-col relative h-full">
                     
                     {/* App Header */}
-                    <div className="text-center mb-8">
+                    <div className="text-center pt-6 pb-4">
                       <h2 className="text-2xl font-bold text-white">Scan D. Passport</h2>
                       <p className="text-gray-400 text-sm mt-2">TEE Attested Virtual Passport</p>
                     </div>
 
-                    {/* Main Interface */}
-                    <div className="flex-1 flex flex-col justify-center space-y-6">
-                      {currentStep === 'home' && (
-                        <div className="space-y-4">
-                          <button
-                            onClick={handleScanPassport}
-                            disabled={loading}
-                            className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
-                          >
-                            Scan Passport
-                          </button>
-                          
-                          <button
-                            onClick={handleImportPrivateKey}
-                            disabled={loading}
-                            className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
-                          >
-                            Import Private Key
-                          </button>
-                        </div>
-                      )}
-
-                      {currentStep === 'scanning' && (
-                        <div className="text-center">
-                          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-400 mx-auto mb-4"></div>
-                          <h3 className="text-lg font-semibold text-white mb-2">Scanning Passport</h3>
-                          <p className="text-gray-400">Please wait...</p>
-                        </div>
-                      )}
-
-                      {currentStep === 'tee-attestation' && (
-                        <div className="text-center">
-                          <div className="animate-pulse">
-                            <div className="bg-blue-600 rounded-full h-16 w-16 mx-auto mb-4 flex items-center justify-center text-2xl">
-                              TEE
-                            </div>
+                    {/* Main Interface - Positioned at 4:6 ratio (top:bottom) */}
+                    <div className="flex-1 flex items-start justify-center px-6 pb-8" style={{paddingTop: '40%'}}>
+                      <div className="w-full max-w-xs -mt-16">
+                        {currentStep === 'home' && (
+                          <div className="space-y-4">
+                            <button
+                              onClick={handleScanPassport}
+                              disabled={loading}
+                              className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
+                            >
+                              Scan Passport
+                            </button>
+                            
+                            <button
+                              onClick={handleImportPrivateKey}
+                              disabled={loading}
+                              className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
+                            >
+                              Import Private Key
+                            </button>
                           </div>
-                          <h3 className="text-lg font-semibold text-white mb-2">TEE Attestation</h3>
-                          <p className="text-gray-400">Securing device...</p>
-                        </div>
-                      )}
+                        )}
 
-                      {currentStep === 'blockchain-check' && (
-                        <div className="text-center">
-                          <div className="animate-pulse">
-                            <div className="bg-purple-600 rounded-full h-16 w-16 mx-auto mb-4 flex items-center justify-center text-2xl">
-                              BC
-                            </div>
+                        {currentStep === 'scanning' && (
+                          <div className="text-center">
+                            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-400 mx-auto mb-4"></div>
+                            <h3 className="text-lg font-semibold text-white mb-2">Scanning Passport</h3>
+                            <p className="text-gray-400">Please wait...</p>
                           </div>
-                          <h3 className="text-lg font-semibold text-white mb-2">Blockchain Check</h3>
-                          <p className="text-gray-400">Verifying on-chain...</p>
-                        </div>
-                      )}
+                        )}
 
-                      {currentStep === 'encrypt-upload' && (
-                        <div className="text-center">
-                          <div className="animate-pulse">
-                            <div className="bg-green-600 rounded-full h-16 w-16 mx-auto mb-4 flex items-center justify-center text-2xl">
-                              ENC
+                        {currentStep === 'tee-attestation' && (
+                          <div className="text-center">
+                            <div className="animate-pulse">
+                              <div className="bg-blue-600 rounded-full h-16 w-16 mx-auto mb-4 flex items-center justify-center text-2xl">
+                                TEE
+                              </div>
                             </div>
+                            <h3 className="text-lg font-semibold text-white mb-2">TEE Attestation</h3>
+                            <p className="text-gray-400">Securing device...</p>
                           </div>
-                          <h3 className="text-lg font-semibold text-white mb-2">Encrypting</h3>
-                          <p className="text-gray-400">Uploading to IPFS...</p>
-                        </div>
-                      )}
+                        )}
 
-                      {currentStep === 'register-blockchain' && (
-                        <div className="text-center">
-                          <div className="animate-pulse">
-                            <div className="bg-orange-600 rounded-full h-16 w-16 mx-auto mb-4 flex items-center justify-center text-2xl">
-                              REG
+                        {currentStep === 'blockchain-check' && (
+                          <div className="text-center">
+                            <div className="animate-pulse">
+                              <div className="bg-purple-600 rounded-full h-16 w-16 mx-auto mb-4 flex items-center justify-center text-2xl">
+                                BC
+                              </div>
                             </div>
+                            <h3 className="text-lg font-semibold text-white mb-2">Blockchain Check</h3>
+                            <p className="text-gray-400">Verifying on-chain...</p>
                           </div>
-                          <h3 className="text-lg font-semibold text-white mb-2">Registering</h3>
-                          <p className="text-gray-400">On blockchain...</p>
-                        </div>
-                      )}
+                        )}
 
-                      {currentStep === 'scanned' && passportData && (
-                        <div className="space-y-4">
-                          <div className="text-center mb-4">
-                            <div className="w-16 h-16 bg-green-500 rounded-full mx-auto mb-3 flex items-center justify-center">
+                        {currentStep === 'encrypt-upload' && (
+                          <div className="text-center">
+                            <div className="animate-pulse">
+                              <div className="bg-green-600 rounded-full h-16 w-16 mx-auto mb-4 flex items-center justify-center text-2xl">
+                                ENC
+                              </div>
+                            </div>
+                            <h3 className="text-lg font-semibold text-white mb-2">Encrypting</h3>
+                            <p className="text-gray-400">Uploading to IPFS...</p>
+                          </div>
+                        )}
+
+                        {currentStep === 'register-blockchain' && (
+                          <div className="text-center">
+                            <div className="animate-pulse">
+                              <div className="bg-orange-600 rounded-full h-16 w-16 mx-auto mb-4 flex items-center justify-center text-2xl">
+                                REG
+                              </div>
+                            </div>
+                            <h3 className="text-lg font-semibold text-white mb-2">Registering</h3>
+                            <p className="text-gray-400">On blockchain...</p>
+                          </div>
+                        )}
+
+                        {currentStep === 'scanned' && passportData && (
+                          <div className="space-y-4">
+                            <div className="text-center mb-4">
+                              <div className="w-16 h-16 bg-green-500 rounded-full mx-auto mb-3 flex items-center justify-center">
+                                <span className="text-white text-lg font-bold">✓</span>
+                              </div>
+                              <h3 className="text-white text-lg">Passport Scanned</h3>
+                              <p className="text-gray-400 text-sm">{passportData.fullName}</p>
+                            </div>
+                            
+                            <button
+                              onClick={() => setShowPassportDetails(true)}
+                              className="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
+                            >
+                              View Details
+                            </button>
+                            
+                            <button
+                              onClick={() => handleTEEAttestation(passportKeys)}
+                              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
+                            >
+                              Continue
+                            </button>
+                          </div>
+                        )}
+
+                        {currentStep === 'success' && (
+                          <div className="text-center space-y-4">
+                            <div className="w-16 h-16 bg-green-500 rounded-full mx-auto mb-4 flex items-center justify-center">
                               <span className="text-white text-lg font-bold">✓</span>
                             </div>
-                            <h3 className="text-white text-lg">Passport Scanned</h3>
-                            <p className="text-gray-400 text-sm">{passportData.fullName}</p>
-                          </div>
-                          
-                          <button
-                            onClick={() => setShowPassportDetails(true)}
-                            className="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
-                          >
-                            View Details
-                          </button>
-                          
-                          <button
-                            onClick={() => handleTEEAttestation(passportKeys)}
-                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
-                          >
-                            Continue
-                          </button>
-                        </div>
-                      )}
-
-                      {currentStep === 'success' && (
-                        <div className="text-center space-y-4">
-                          <div className="w-16 h-16 bg-green-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-                            <span className="text-white text-lg font-bold">✓</span>
-                          </div>
-                          <h3 className="text-white text-lg font-semibold">Success</h3>
-                          <p className="text-gray-400 text-sm mb-4">Identity verified</p>
-                          
-                          <button
-                            onClick={handleRevealPrivateKey}
-                            className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
-                          >
-                            Export Key
-                          </button>
-                          
-                          <button
-                            onClick={resetFlow}
-                            className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
-                          >
-                            Reset
-                          </button>
-                        </div>
-                      )}
-
-                      {currentStep === 'error' && (
-                        <div className="text-center space-y-4">
-                          <div className="w-16 h-16 bg-red-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-                            <span className="text-white text-lg font-bold">!</span>
-                          </div>
-                          <h3 className="text-white text-lg font-semibold">Error</h3>
-                          <p className="text-red-300 text-sm mb-4">{error}</p>
-                          <button
-                            onClick={resetFlow}
-                            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
-                          >
-                            Try Again
-                          </button>
-                        </div>
-                      )}
-
-                      {currentStep === 'import' && (
-                        <div className="space-y-4">
-                          <h3 className="text-white text-lg font-semibold text-center mb-4">Import Private Key</h3>
-                          <div>
-                            <textarea
-                              value={privateKeyInput}
-                              onChange={(e) => setPrivateKeyInput(e.target.value)}
-                              className="w-full bg-gray-800 border border-gray-600 rounded-xl p-3 text-white placeholder-gray-400 text-sm font-mono"
-                              rows={3}
-                              placeholder="Enter your private key..."
-                              disabled={loading}
-                            />
-                          </div>
-                          <div className="flex space-x-3">
-                            <button 
-                              onClick={() => handleMigration(privateKeyInput)}
-                              disabled={loading || !privateKeyInput || privateKeyInput.length < 50}
-                              className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform active:scale-95"
+                            <h3 className="text-white text-lg font-semibold">Success</h3>
+                            <p className="text-gray-400 text-sm mb-4">Identity verified</p>
+                            
+                            <button
+                              onClick={handleRevealPrivateKey}
+                              className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
                             >
-                              {loading ? 'Loading...' : 'Import'}
+                              Export Key
                             </button>
+                            
                             <button
                               onClick={resetFlow}
-                              disabled={loading}
-                              className="flex-1 bg-gray-500 hover:bg-gray-600 disabled:opacity-50 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform active:scale-95"
+                              className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
                             >
-                              Cancel
+                              Reset
                             </button>
                           </div>
-                        </div>
-                      )}
+                        )}
+
+                        {currentStep === 'error' && (
+                          <div className="text-center space-y-4">
+                            <div className="w-16 h-16 bg-red-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+                              <span className="text-white text-lg font-bold">!</span>
+                            </div>
+                            <h3 className="text-white text-lg font-semibold">Error</h3>
+                            <p className="text-red-300 text-sm mb-4">{error}</p>
+                            <button
+                              onClick={resetFlow}
+                              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
+                            >
+                              Try Again
+                            </button>
+                          </div>
+                        )}
+
+                        {currentStep === 'import' && (
+                          <div className="space-y-4">
+                            <h3 className="text-white text-lg font-semibold text-center mb-4">Import Private Key</h3>
+                            <div>
+                              <textarea
+                                value={privateKeyInput}
+                                onChange={(e) => setPrivateKeyInput(e.target.value)}
+                                className="w-full bg-gray-800 border border-gray-600 rounded-xl p-3 text-white placeholder-gray-400 text-sm font-mono"
+                                rows={3}
+                                placeholder="Enter your private key..."
+                                disabled={loading}
+                              />
+                            </div>
+                            <div className="flex space-x-3">
+                              <button 
+                                onClick={() => handleMigration(privateKeyInput)}
+                                disabled={loading || !privateKeyInput || privateKeyInput.length < 50}
+                                className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform active:scale-95"
+                              >
+                                {loading ? 'Loading...' : 'Import'}
+                              </button>
+                              <button
+                                onClick={resetFlow}
+                                disabled={loading}
+                                className="flex-1 bg-gray-500 hover:bg-gray-600 disabled:opacity-50 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform active:scale-95"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Home Indicator */}
-                    <div className="flex justify-center mt-4">
+                    {/* Home Indicator - Fixed at bottom */}
+                    <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2">
                       <div className="w-32 h-1 bg-white/30 rounded-full"></div>
                     </div>
                   </div>
