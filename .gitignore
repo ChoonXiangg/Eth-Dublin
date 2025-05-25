@@ -58,6 +58,16 @@ MobilePass/coverage.json
 # Hardhat network files
 MobilePass/.openzeppelin/
 
+# Contract deployment info (local development)
+contract-info.json
+WebApp/contract-info.json
+public/contract-info.json
+
+# Additional artifacts patterns (more specific)
+**/artifacts/**/*.dbg.json
+**/cache/**/*.json
+**/.solidity-files-cache.json
+
 # ===== GENERAL DEVELOPMENT =====
 # Logs
 *.log
