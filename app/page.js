@@ -5,6 +5,7 @@ import { PassportService } from './services/PassportService';
 import { TEEService } from './services/TEEService';
 import { IPFSService } from './services/IPFSService';
 import { BlockchainService } from './services/BlockchainService';
+import { ethers } from 'ethers';
 
 export default function SecurePassportIdentity() {
   const [currentStep, setCurrentStep] = useState('home');
@@ -202,17 +203,32 @@ export default function SecurePassportIdentity() {
       addLog('Connecting to blockchain...');
       await blockchainService.initialize();
 
-      // For migration, we need to reconstruct the passport data from the private key
-      // In a real system, you'd derive the public key hash from the private key
-      // For demo purposes, we'll simulate this
+      // FIXED: Properly reconstruct the publicKeyHash from the private key
+      // The private key is the hex representation of the SHA-256 hash array
+      // We need to reconstruct the same publicKeyHash that was used during registration
+      addLog('Reconstructing passport keys from private key...');
+      
+      // Convert private key back to hash array (reverse the original process)
+      const privateKeyHex = privateKeyInput;
+      const hashArray = [];
+      for (let i = 0; i < privateKeyHex.length; i += 2) {
+        hashArray.push(parseInt(privateKeyHex.substr(i, 2), 16));
+      }
+      
+      // CRITICAL FIX: In generatePassportKeys, publicKeyHash is computed AFTER hashArray.reverse()
+      // So we need to reverse our reconstructed array to match the original registration
+      const reversedHashArray = hashArray.slice().reverse(); // Create a copy and reverse it
+      const publicKeyHash = '0x' + reversedHashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      
       const simulatedPassportKeys = {
         privateKey: privateKeyInput,
-        publicKey: privateKeyInput.split('').reverse().join(''), // Simplified
-        publicKeyHash: '0x' + privateKeyInput.substring(0, 64) // Use first 64 chars as hash
+        publicKey: reversedHashArray.map(b => b.toString(16).padStart(2, '0')).join(''), // Use reversed array for consistency
+        publicKeyHash: publicKeyHash
       };
 
       setPassportKeys(simulatedPassportKeys);
       addLog('Passport keys reconstructed from private key');
+      addLog(`Reconstructed publicKeyHash: ${publicKeyHash.substring(0, 20)}...`);
 
       // Check if passport exists on-chain
       addLog('Verifying passport exists on blockchain...');
@@ -230,10 +246,31 @@ export default function SecurePassportIdentity() {
       // 3. Update the blockchain with the new device address
       
       addLog('Performing migration...');
+      
+      // Generate real migration signature using passport private key
+      // Create migration message to sign
+      const migrationMessage = ethers.utils.solidityKeccak256(
+        ['bytes32', 'address', 'string', 'uint256'],
+        [
+          simulatedPassportKeys.publicKeyHash,
+          newDeviceKeyData.deviceAddress,
+          'QmMigratedData123',
+          Date.now() // Add timestamp to prevent replay attacks
+        ]
+      );
+      
+      // Sign the migration message with passport private key
+      const wallet = new ethers.Wallet(simulatedPassportKeys.privateKey);
+      const migrationSignature = await wallet.signMessage(ethers.utils.arrayify(migrationMessage));
+      
+      addLog('Migration signature generated with passport private key');
+      addLog(`Signature: ${migrationSignature.substring(0, 20)}...`);
+      
       const result = await blockchainService.migratePassport(
         simulatedPassportKeys.publicKeyHash,
         newDeviceKeyData.deviceAddress,
-        'QmMigratedData123' // In real system, this would be the re-encrypted IPFS hash
+        'QmMigratedData123', // In real system, this would be the re-encrypted IPFS hash
+        migrationSignature  // Real cryptographic signature proving ownership
       );
 
       addLog('Migration completed successfully!');
