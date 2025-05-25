@@ -16,8 +16,6 @@ export default function SecurePassportIdentity() {
   const [logs, setLogs] = useState([]);
   const [error, setError] = useState(null);
   const [privateKeyInput, setPrivateKeyInput] = useState('');
-  const [showPrivateKeyModal, setShowPrivateKeyModal] = useState(false);
-  const [showPassportDetails, setShowPassportDetails] = useState(false);
   const [selectedPassportType, setSelectedPassportType] = useState('US_PASSPORT_001');
 
   // Services
@@ -285,27 +283,6 @@ export default function SecurePassportIdentity() {
     }
   };
 
-  // Secure Private Key Reveal with WebAuthn Re-authentication
-  const handleRevealPrivateKey = async () => {
-    try {
-      addLog('Requesting WebAuthn authentication to reveal private key...');
-      
-      // Re-authenticate using WebAuthn
-      const authResult = await teeService.authenticateUser();
-      
-      if (authResult.success) {
-        addLog('WebAuthn authentication successful');
-        setShowPrivateKeyModal(true);
-      } else {
-        throw new Error('Authentication failed');
-      }
-      
-    } catch (error) {
-      addLog(`Authentication failed: ${error.message}`, 'error');
-      setError('WebAuthn authentication required to reveal private key');
-    }
-  };
-
   const resetFlow = () => {
     setCurrentStep('home');
     setPassportData(null);
@@ -322,12 +299,12 @@ export default function SecurePassportIdentity() {
         
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4 text-gray-800">Secure Passport Identity</h1>
-          <p className="text-xl text-gray-600">TEE-Secured Identity System with IPFS & Blockchain</p>
+          <h1 className="text-4xl font-bold mb-4 text-gray-800">Scan D. Passport</h1>
+          <p className="text-xl text-gray-600">TEE Attested Virtual Passport</p>
         </div>
 
         {/* Main Layout: iPhone Left, Controls Right */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-screen max-h-[800px]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-200px)] max-h-[calc(100vh-200px)]">
           
           {/* Left Side: iPhone Mockup */}
           <div className="flex items-center justify-center">
@@ -355,9 +332,9 @@ export default function SecurePassportIdentity() {
                       <p className="text-gray-400 text-sm mt-2">TEE Attested Virtual Passport</p>
                     </div>
 
-                    {/* Main Interface - Positioned at 4:6 ratio (top:bottom) */}
-                    <div className="flex-1 flex items-start justify-center px-6 pb-8" style={{paddingTop: '40%'}}>
-                      <div className="w-full max-w-xs -mt-16">
+                    {/* Main Interface - Vertically Centered */}
+                    <div className="flex-1 flex items-center justify-center px-6 pb-8">
+                      <div className="w-full max-w-xs">
                         {currentStep === 'home' && (
                           <div className="space-y-4">
                             <button
@@ -445,13 +422,6 @@ export default function SecurePassportIdentity() {
                             </div>
                             
                             <button
-                              onClick={() => setShowPassportDetails(true)}
-                              className="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
-                            >
-                              View Details
-                            </button>
-                            
-                            <button
                               onClick={() => handleTEEAttestation(passportKeys)}
                               className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
                             >
@@ -469,18 +439,87 @@ export default function SecurePassportIdentity() {
                             <p className="text-gray-400 text-sm mb-4">Identity verified</p>
                             
                             <button
-                              onClick={handleRevealPrivateKey}
-                              className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
+                              onClick={() => setCurrentStep('passport-data')}
+                              className="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
                             >
-                              Export Key
+                              Passport Data
                             </button>
                             
                             <button
-                              onClick={resetFlow}
-                              className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
+                              onClick={() => setCurrentStep('private-key')}
+                              className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
                             >
-                              Reset
+                              Private Key
                             </button>
+                          </div>
+                        )}
+
+                        {currentStep === 'passport-data' && passportData && (
+                          <div className="text-white">
+                            <div className="text-center mb-4">
+                              <h3 className="text-lg font-semibold text-white mb-2">Passport Data</h3>
+                            </div>
+                            
+                            <div className="space-y-3 text-sm">
+                              <div><span className="text-blue-300 font-medium">Name:</span> <span className="text-white">{passportData.fullName}</span></div>
+                              <div><span className="text-blue-300 font-medium">Document:</span> <span className="text-white">{passportData.documentNumber}</span></div>
+                              <div><span className="text-blue-300 font-medium">Country:</span> <span className="text-white">{passportData.issuingCountry}</span></div>
+                              <div><span className="text-blue-300 font-medium">DOB:</span> <span className="text-white">{passportData.dateOfBirth}</span></div>
+                              <div><span className="text-blue-300 font-medium">Expires:</span> <span className="text-white">{passportData.dateOfExpiry}</span></div>
+                              <div><span className="text-blue-300 font-medium">Sex:</span> <span className="text-white">{passportData.sex}</span></div>
+                              {passportKeys && (
+                                <div><span className="text-blue-300 font-medium">Key Hash:</span> <span className="text-white font-mono text-xs">{passportKeys.publicKeyHash.substring(0, 20)}...</span></div>
+                              )}
+                            </div>
+                            
+                            <button
+                              onClick={() => setCurrentStep('success')}
+                              className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg mt-4"
+                            >
+                              Back
+                            </button>
+                          </div>
+                        )}
+
+                        {currentStep === 'private-key' && (
+                          <div className="text-white">
+                            <div className="text-center mb-4">
+                              <div className="bg-yellow-500 rounded-full h-12 w-12 mx-auto mb-3 flex items-center justify-center">
+                                <span className="text-white font-bold">KEY</span>
+                              </div>
+                              <h3 className="text-lg font-semibold text-white">Your Migration Key</h3>
+                              <p className="text-sm text-gray-300 mt-2">
+                                Save this securely - you'll need it to migrate to a new device
+                              </p>
+                            </div>
+                            
+                            <div className="bg-black/30 rounded-lg p-3 mb-4">
+                              <div className="font-mono text-xs text-green-400 break-all">
+                                {passportKeys?.privateKey}
+                              </div>
+                            </div>
+                            
+                            <div className="flex space-x-3 mb-4">
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(passportKeys?.privateKey);
+                                  addLog('Private key copied to clipboard');
+                                }}
+                                className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2 px-4 rounded-lg"
+                              >
+                                Copy Key
+                              </button>
+                              <button
+                                onClick={() => setCurrentStep('success')}
+                                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg"
+                              >
+                                Back
+                              </button>
+                            </div>
+                            
+                            <div className="text-xs text-gray-400 text-center">
+                              This key was protected by WebAuthn hardware security
+                            </div>
                           </div>
                         )}
 
@@ -545,12 +584,12 @@ export default function SecurePassportIdentity() {
           </div>
 
           {/* Right Side: Controls & Logs */}
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 h-full max-h-full overflow-hidden">
             
-            {/* Top Right: Passport Selector */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">Select Mock Passport</h3>
-              <div className="space-y-3">
+            {/* Top Right: Passport Selector - Reduced size */}
+            <div className="bg-white rounded-2xl shadow-lg p-4 border border-gray-200 flex-shrink-0">
+              <h3 className="text-lg font-bold text-gray-800 mb-3">Select Mock Passport</h3>
+              <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
                   Choose a test passport to simulate scanning:
                 </label>
@@ -572,8 +611,8 @@ export default function SecurePassportIdentity() {
               </div>
             </div>
 
-            {/* Bottom Right: System Logs */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 flex-1">
+            {/* Bottom Right: System Logs - Expanded */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 flex-1 min-h-0 overflow-hidden">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold text-gray-800">System Logs</h3>
                 <button
@@ -584,7 +623,7 @@ export default function SecurePassportIdentity() {
                 </button>
               </div>
               
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 h-64 overflow-y-auto font-mono text-sm">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex-1 overflow-y-auto font-mono text-sm">
                 {logs.map((log, index) => (
                   <div
                     key={index}
@@ -604,204 +643,7 @@ export default function SecurePassportIdentity() {
             </div>
           </div>
         </div>
-
-        {/* Status Cards */}
-        {(passportData || deviceKey) && (
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {passportData && (
-              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">Passport Data</h3>
-                <div className="space-y-2 text-sm">
-                  <div><span className="text-blue-600 font-medium">Name:</span> <span className="text-gray-700">{passportData.fullName}</span></div>
-                  <div><span className="text-blue-600 font-medium">Document:</span> <span className="text-gray-700">{passportData.documentNumber}</span></div>
-                  <div><span className="text-blue-600 font-medium">Country:</span> <span className="text-gray-700">{passportData.issuingCountry}</span></div>
-                  <div><span className="text-blue-600 font-medium">Expires:</span> <span className="text-gray-700">{passportData.dateOfExpiry}</span></div>
-                  {passportKeys && (
-                    <div><span className="text-blue-600 font-medium">Public Key Hash:</span> <span className="text-gray-700 font-mono">{passportKeys.publicKeyHash.substring(0, 20)}...</span></div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {deviceKey && (
-              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">Device Data</h3>
-                <div className="space-y-2 text-sm">
-                  <div><span className="text-blue-600 font-medium">Device Address:</span> <span className="text-gray-700 font-mono">{deviceKey.deviceAddress}</span></div>
-                  <div><span className="text-blue-600 font-medium">TEE Status:</span> <span className="text-gray-700">{deviceKey.attestationData.fallback ? 'Fallback' : 'Hardware'}</span></div>
-                  <div><span className="text-blue-600 font-medium">Timestamp:</span> <span className="text-gray-700">{new Date(deviceKey.attestationData.timestamp).toLocaleString()}</span></div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </div>
-
-      {/* Private Key Modal */}
-      {showPrivateKeyModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-900 border border-white/20 rounded-2xl p-6 max-w-md w-full mx-4">
-            <div className="text-center mb-4">
-              <div className="bg-yellow-500 rounded-full h-12 w-12 mx-auto mb-3 flex items-center justify-center">
-                <span className="text-white font-bold">KEY</span>
-              </div>
-              <h3 className="text-xl font-semibold text-white">Your Migration Key</h3>
-              <p className="text-sm text-gray-300 mt-2">
-                Save this securely - you'll need it to migrate to a new device
-              </p>
-            </div>
-            
-            <div className="bg-black rounded-lg p-4 mb-4">
-              <div className="font-mono text-xs text-green-400 break-all">
-                {passportKeys?.privateKey}
-              </div>
-            </div>
-            
-            <div className="flex space-x-3">
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(passportKeys?.privateKey);
-                  addLog('Private key copied to clipboard');
-                }}
-                className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2 px-4 rounded-lg"
-              >
-                Copy Key
-              </button>
-              <button
-                onClick={() => setShowPrivateKeyModal(false)}
-                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg"
-              >
-                Close
-              </button>
-            </div>
-            
-            <div className="mt-4 text-xs text-gray-400 text-center">
-              This key was protected by WebAuthn hardware security
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Virtual Passport Modal */}
-      {showPassportDetails && passportData && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-blue-900 to-purple-900 rounded-3xl shadow-2xl max-w-lg w-full border-2 border-yellow-500 relative overflow-hidden">
-            {/* Passport Header */}
-            <div className="bg-gradient-to-r from-blue-800 to-blue-900 p-6 text-center relative">
-              <div className="absolute top-4 right-4">
-                <button
-                  onClick={() => setShowPassportDetails(false)}
-                  className="bg-white/20 hover:bg-white/30 rounded-full w-8 h-8 flex items-center justify-center text-white transition-all"
-                >
-                  ✕
-                </button>
-              </div>
-              
-              <div className="text-yellow-400 text-sm font-semibold mb-2">
-                {passportData.issuingCountry === 'USA' ? 'UNITED STATES OF AMERICA' : passportData.issuingCountry}
-              </div>
-              <div className="text-white text-2xl font-bold mb-1">PASSPORT</div>
-              <div className="text-yellow-400 text-sm">{passportData.issuingAuthority}</div>
-            </div>
-
-            {/* Passport Content */}
-            <div className="p-6">
-              <div className="grid grid-cols-3 gap-6">
-                {/* Photo Section */}
-                <div className="col-span-1">
-                  <div className="w-24 h-32 bg-gray-300 rounded-lg flex items-center justify-center mb-4 border-2 border-gray-400">
-                    <div className="text-center text-gray-600">
-                      <div className="text-2xl mb-1 font-bold">PHOTO</div>
-                    </div>
-                  </div>
-                  
-                  {/* Signature */}
-                  <div className="text-xs text-white mb-1">Signature:</div>
-                  <div className="h-8 bg-white/10 rounded border border-white/20 flex items-center justify-center">
-                    <div className="text-white/60 text-xs italic">Digital Signature</div>
-                  </div>
-                </div>
-
-                {/* Details Section */}
-                <div className="col-span-2">
-                  <div className="space-y-3 text-white">
-                    <div>
-                      <div className="text-xs text-yellow-400 font-semibold">TYPE / TYPE</div>
-                      <div className="text-sm">P</div>
-                    </div>
-                    
-                    <div>
-                      <div className="text-xs text-yellow-400 font-semibold">CODE OF ISSUING STATE / CODE DE L'ÉTAT ÉMETTEUR</div>
-                      <div className="text-sm">{passportData.nationality}</div>
-                    </div>
-                    
-                    <div>
-                      <div className="text-xs text-yellow-400 font-semibold">PASSPORT NO. / PASSEPORT NO.</div>
-                      <div className="text-sm font-mono">{passportData.documentNumber}</div>
-                    </div>
-                    
-                    <div>
-                      <div className="text-xs text-yellow-400 font-semibold">SURNAME / NOM</div>
-                      <div className="text-sm font-semibold">{passportData.lastName}</div>
-                    </div>
-                    
-                    <div>
-                      <div className="text-xs text-yellow-400 font-semibold">GIVEN NAMES / PRÉNOMS</div>
-                      <div className="text-sm">{passportData.firstName}</div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-xs text-yellow-400 font-semibold">SEX / SEXE</div>
-                        <div className="text-sm">{passportData.sex}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-yellow-400 font-semibold">DATE OF BIRTH / DATE DE NAISSANCE</div>
-                        <div className="text-sm">{passportData.dateOfBirth}</div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <div className="text-xs text-yellow-400 font-semibold">PLACE OF BIRTH / LIEU DE NAISSANCE</div>
-                      <div className="text-sm">{passportData.placeOfBirth || 'Not Available'}</div>
-                    </div>
-                    
-                    <div>
-                      <div className="text-xs text-yellow-400 font-semibold">DATE OF ISSUE / DATE DE DÉLIVRANCE</div>
-                      <div className="text-sm">15 MAR 2022</div>
-                    </div>
-                    
-                    <div>
-                      <div className="text-xs text-yellow-400 font-semibold">DATE OF EXPIRY / DATE D'EXPIRATION</div>
-                      <div className="text-sm">{passportData.dateOfExpiry}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* MRZ Section */}
-              <div className="mt-6 pt-4 border-t border-white/20">
-                <div className="text-xs text-yellow-400 font-semibold mb-2">MACHINE READABLE ZONE</div>
-                <div className="bg-black/20 p-3 rounded font-mono text-xs text-white tracking-wider">
-                  <div>{passportData.mrzLine1}</div>
-                  <div>{passportData.mrzLine2}</div>
-                </div>
-              </div>
-
-              {/* Security Features */}
-              <div className="mt-4 text-center">
-                <div className="text-xs text-yellow-400 font-semibold mb-2">VERIFIED ✓</div>
-                <div className="flex justify-center space-x-4 text-xs text-white/80">
-                  <span>NFC Chip</span>
-                  <span>Biometric</span>
-                  <span>MRZ Validated</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
