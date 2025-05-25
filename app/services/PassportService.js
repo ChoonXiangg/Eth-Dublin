@@ -93,6 +93,54 @@ export class PassportService {
                 mrzLine1: 'P<DEUMUELLER<<HANS<FREDERICK<<<<<<<<<<<<<<<<<<<',
                 mrzLine2: 'PC4567891232DEU8211085M3111086<<<<<<<<<<<<<<<2',
                 photo: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD...'
+            },
+            'CANADIAN_PASSPORT_001': {
+                documentNumber: 'PD555888777',
+                nationality: 'CAN',
+                firstName: 'SARAH',
+                lastName: 'SMITH',
+                fullName: 'SARAH ELIZABETH SMITH',
+                dateOfBirth: '1988-12-03',
+                dateOfExpiry: '2030-12-03',
+                sex: 'F',
+                issuingCountry: 'CAN',
+                issuingAuthority: 'Passport Canada',
+                placeOfBirth: 'Toronto, ON',
+                mrzLine1: 'P<CANSMITH<<SARAH<ELIZABETH<<<<<<<<<<<<<<<<<<<',
+                mrzLine2: 'PD5558887773CAN8812035F3012036<<<<<<<<<<<<<<<5',
+                photo: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD...'
+            },
+            'JAPANESE_PASSPORT_001': {
+                documentNumber: 'PE999222111',
+                nationality: 'JPN',
+                firstName: 'YUKI',
+                lastName: 'TANAKA',
+                fullName: 'YUKI TANAKA',
+                dateOfBirth: '1995-07-20',
+                dateOfExpiry: '2033-07-20',
+                sex: 'F',
+                issuingCountry: 'JPN',
+                issuingAuthority: 'Ministry of Foreign Affairs',
+                placeOfBirth: 'Tokyo, Japan',
+                mrzLine1: 'P<JPNTANAKA<<YUKI<<<<<<<<<<<<<<<<<<<<<<<<<<<<<',
+                mrzLine2: 'PE9992221115JPN9507205F3307206<<<<<<<<<<<<<<<7',
+                photo: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD...'
+            },
+            'FRENCH_PASSPORT_001': {
+                documentNumber: 'PF777444333',
+                nationality: 'FRA',
+                firstName: 'PIERRE',
+                lastName: 'DUPONT',
+                fullName: 'PIERRE ALEXANDRE DUPONT',
+                dateOfBirth: '1987-01-15',
+                dateOfExpiry: '2032-01-15',
+                sex: 'M',
+                issuingCountry: 'FRA',
+                issuingAuthority: 'Prefecture de Police',
+                placeOfBirth: 'Paris, France',
+                mrzLine1: 'P<FRADUPONT<<PIERRE<ALEXANDRE<<<<<<<<<<<<<<<<<<<',
+                mrzLine2: 'PF7774443332FRA8701155M3201156<<<<<<<<<<<<<<<9',
+                photo: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD...'
             }
         };
 
@@ -203,9 +251,12 @@ export class PassportService {
      */
     static getAvailablePassportTypes() {
         return [
-            { id: 'US_PASSPORT_001', name: 'US Passport - John Doe', country: 'USA' },
-            { id: 'UK_PASSPORT_001', name: 'UK Passport - Emma Johnson', country: 'GBR' },
-            { id: 'GERMAN_PASSPORT_001', name: 'German Passport - Hans Mueller', country: 'DEU' }
+            { id: 'US_PASSPORT_001', name: '🇺🇸 US Passport - John Doe', country: 'USA', displayName: 'John Michael Doe (USA)' },
+            { id: 'UK_PASSPORT_001', name: '🇬🇧 UK Passport - Emma Johnson', country: 'GBR', displayName: 'Emma Anne Johnson (UK)' },
+            { id: 'GERMAN_PASSPORT_001', name: '🇩🇪 German Passport - Hans Mueller', country: 'DEU', displayName: 'Hans Frederick Mueller (Germany)' },
+            { id: 'CANADIAN_PASSPORT_001', name: '🇨🇦 Canadian Passport - Sarah Smith', country: 'CAN', displayName: 'Sarah Elizabeth Smith (Canada)' },
+            { id: 'JAPANESE_PASSPORT_001', name: '🇯🇵 Japanese Passport - Yuki Tanaka', country: 'JPN', displayName: 'Yuki Tanaka (Japan)' },
+            { id: 'FRENCH_PASSPORT_001', name: '🇫🇷 French Passport - Pierre Dupont', country: 'FRA', displayName: 'Pierre Alexandre Dupont (France)' }
         ];
     }
 } 

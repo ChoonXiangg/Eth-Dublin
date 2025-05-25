@@ -17,6 +17,7 @@ export default function SecurePassportIdentity() {
   const [privateKeyInput, setPrivateKeyInput] = useState('');
   const [showPrivateKeyModal, setShowPrivateKeyModal] = useState(false);
   const [showPassportDetails, setShowPassportDetails] = useState(false);
+  const [selectedPassportType, setSelectedPassportType] = useState('US_PASSPORT_001');
 
   // Services
   const [teeService] = useState(new TEEService());
@@ -46,8 +47,8 @@ export default function SecurePassportIdentity() {
       setCurrentStep('scanning');
       addLog('Starting passport scan process...');
 
-      // Simulate passport scanning
-      const scannedData = await PassportService.simulatePassportScan('US_PASSPORT_001');
+      // Use selected passport type instead of hardcoded value
+      const scannedData = await PassportService.simulatePassportScan(selectedPassportType);
       setPassportData(scannedData);
       addLog(`Passport scanned: ${scannedData.fullName} (${scannedData.documentNumber})`);
 
@@ -279,20 +280,20 @@ export default function SecurePassportIdentity() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 text-white">
+    <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-8">
         
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4">Secure Passport Identity</h1>
-          <p className="text-xl text-blue-200">TEE-Secured Identity System with IPFS & Blockchain</p>
+          <h1 className="text-4xl font-bold mb-4 text-gray-800">Secure Passport Identity</h1>
+          <p className="text-xl text-gray-600">TEE-Secured Identity System with IPFS & Blockchain</p>
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Main Layout: iPhone Left, Controls Right */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-screen max-h-[800px]">
           
-          {/* iPhone Interface */}
-          <div className="flex justify-center">
+          {/* Left Side: iPhone Mockup */}
+          <div className="flex items-center justify-center">
             <div className="relative">
               {/* iPhone Frame */}
               <div className="w-80 h-[650px] bg-black rounded-[3rem] p-2 shadow-2xl">
@@ -301,22 +302,30 @@ export default function SecurePassportIdentity() {
                   {/* Notch */}
                   <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-32 h-6 bg-black rounded-b-2xl z-10"></div>
                   
-                  {/* App Content */}
-                  <div className="px-6 h-full pb-8 pt-8 flex flex-col justify-center">
+                  {/* iPhone Status Bar */}
+                  <div className="bg-gray-900 px-6 py-2 flex justify-between items-center text-white text-sm">
+                    <span></span>
+                    <div className="flex items-center space-x-1">
+                    </div>
+                  </div>
+
+                  {/* iPhone Content */}
+                  <div className="flex-1 bg-gray-900 text-white p-6 flex flex-col">
+                    
                     {/* App Header */}
                     <div className="text-center mb-8">
-                      <div className="text-4xl mb-3">🛂</div>
-                      <h2 className="text-white text-lg font-semibold">Virtual Passport</h2>
+                      <h2 className="text-2xl font-bold text-white">Scan D. Passport</h2>
+                      <p className="text-gray-400 text-sm mt-2">TEE Attested Virtual Passport</p>
                     </div>
 
                     {/* Main Interface */}
-                    <div className="space-y-4 flex-shrink-0">
+                    <div className="flex-1 flex flex-col justify-center space-y-6">
                       {currentStep === 'home' && (
                         <div className="space-y-4">
                           <button
                             onClick={handleScanPassport}
                             disabled={loading}
-                            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                            className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
                           >
                             Scan Passport
                           </button>
@@ -324,7 +333,7 @@ export default function SecurePassportIdentity() {
                           <button
                             onClick={handleImportPrivateKey}
                             disabled={loading}
-                            className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                            className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
                           >
                             Import Private Key
                           </button>
@@ -332,90 +341,121 @@ export default function SecurePassportIdentity() {
                       )}
 
                       {currentStep === 'scanning' && (
-                        <div className="text-center py-12">
-                          <div className="relative mb-6">
-                            <div className="w-32 h-32 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <span className="text-white text-lg font-bold">SCAN</span>
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-400 mx-auto mb-4"></div>
+                          <h3 className="text-lg font-semibold text-white mb-2">Scanning Passport</h3>
+                          <p className="text-gray-400">Please wait...</p>
+                        </div>
+                      )}
+
+                      {currentStep === 'tee-attestation' && (
+                        <div className="text-center">
+                          <div className="animate-pulse">
+                            <div className="bg-blue-600 rounded-full h-16 w-16 mx-auto mb-4 flex items-center justify-center text-2xl">
+                              TEE
                             </div>
                           </div>
-                          <h3 className="text-white text-lg mb-2">Scanning Passport</h3>
-                          <p className="text-gray-400 text-sm">Hold your device near the passport...</p>
+                          <h3 className="text-lg font-semibold text-white mb-2">TEE Attestation</h3>
+                          <p className="text-gray-400">Securing device...</p>
+                        </div>
+                      )}
+
+                      {currentStep === 'blockchain-check' && (
+                        <div className="text-center">
+                          <div className="animate-pulse">
+                            <div className="bg-purple-600 rounded-full h-16 w-16 mx-auto mb-4 flex items-center justify-center text-2xl">
+                              BC
+                            </div>
+                          </div>
+                          <h3 className="text-lg font-semibold text-white mb-2">Blockchain Check</h3>
+                          <p className="text-gray-400">Verifying on-chain...</p>
+                        </div>
+                      )}
+
+                      {currentStep === 'encrypt-upload' && (
+                        <div className="text-center">
+                          <div className="animate-pulse">
+                            <div className="bg-green-600 rounded-full h-16 w-16 mx-auto mb-4 flex items-center justify-center text-2xl">
+                              ENC
+                            </div>
+                          </div>
+                          <h3 className="text-lg font-semibold text-white mb-2">Encrypting</h3>
+                          <p className="text-gray-400">Uploading to IPFS...</p>
+                        </div>
+                      )}
+
+                      {currentStep === 'register-blockchain' && (
+                        <div className="text-center">
+                          <div className="animate-pulse">
+                            <div className="bg-orange-600 rounded-full h-16 w-16 mx-auto mb-4 flex items-center justify-center text-2xl">
+                              REG
+                            </div>
+                          </div>
+                          <h3 className="text-lg font-semibold text-white mb-2">Registering</h3>
+                          <p className="text-gray-400">On blockchain...</p>
                         </div>
                       )}
 
                       {currentStep === 'scanned' && passportData && (
                         <div className="space-y-4">
                           <div className="text-center mb-4">
-                            <div className="w-20 h-20 bg-green-500 rounded-full mx-auto mb-3 flex items-center justify-center">
+                            <div className="w-16 h-16 bg-green-500 rounded-full mx-auto mb-3 flex items-center justify-center">
                               <span className="text-white text-lg font-bold">✓</span>
                             </div>
-                            <h3 className="text-white text-lg">Passport Scanned!</h3>
+                            <h3 className="text-white text-lg">Passport Scanned</h3>
                             <p className="text-gray-400 text-sm">{passportData.fullName}</p>
                           </div>
                           
                           <button
                             onClick={() => setShowPassportDetails(true)}
-                            className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
+                            className="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
                           >
-                            Passport Details
+                            View Details
                           </button>
                           
                           <button
                             onClick={() => handleTEEAttestation(passportKeys)}
-                            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
+                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
                           >
-                            Continue Verification
+                            Continue
                           </button>
-                        </div>
-                      )}
-
-                      {(currentStep === 'tee-attestation' || currentStep === 'blockchain-check' || currentStep === 'encrypt-upload' || currentStep === 'register-blockchain') && (
-                        <div className="text-center py-8">
-                          <div className="relative mb-6">
-                            <div className="w-24 h-24 bg-blue-600 rounded-full mx-auto mb-4 flex items-center justify-center animate-pulse">
-                              <span className="text-white text-lg font-bold">SEC</span>
-                            </div>
-                          </div>
-                          <h3 className="text-white text-lg mb-2">Processing...</h3>
-                          <p className="text-gray-400 text-sm">Securing your identity</p>
                         </div>
                       )}
 
                       {currentStep === 'success' && (
                         <div className="text-center space-y-4">
-                          <div className="w-20 h-20 bg-green-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-                            <span className="text-white text-lg font-bold">DONE</span>
+                          <div className="w-16 h-16 bg-green-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+                            <span className="text-white text-lg font-bold">✓</span>
                           </div>
-                          <h3 className="text-white text-lg font-semibold">Success!</h3>
-                          <p className="text-gray-400 text-sm mb-4">Identity verified and secured</p>
+                          <h3 className="text-white text-lg font-semibold">Success</h3>
+                          <p className="text-gray-400 text-sm mb-4">Identity verified</p>
                           
                           <button
                             onClick={handleRevealPrivateKey}
-                            className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
+                            className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
                           >
                             Export Key
                           </button>
                           
                           <button
                             onClick={resetFlow}
-                            className="w-full bg-gradient-to-r from-gray-500 to-gray-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
+                            className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
                           >
-                            Verify Another
+                            Reset
                           </button>
                         </div>
                       )}
 
                       {currentStep === 'error' && (
                         <div className="text-center space-y-4">
-                          <div className="w-20 h-20 bg-red-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-                            <span className="text-white text-lg font-bold">ERR</span>
+                          <div className="w-16 h-16 bg-red-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+                            <span className="text-white text-lg font-bold">!</span>
                           </div>
                           <h3 className="text-white text-lg font-semibold">Error</h3>
                           <p className="text-red-300 text-sm mb-4">{error}</p>
                           <button
                             onClick={resetFlow}
-                            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
+                            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
                           >
                             Try Again
                           </button>
@@ -454,43 +494,74 @@ export default function SecurePassportIdentity() {
                         </div>
                       )}
                     </div>
-                  </div>
 
-                  {/* Home Indicator */}
-                  <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-white rounded-full opacity-60"></div>
+                    {/* Home Indicator */}
+                    <div className="flex justify-center mt-4">
+                      <div className="w-32 h-1 bg-white/30 rounded-full"></div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Logs Panel */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-semibold">System Logs</h2>
-              <button
-                onClick={clearLogs}
-                className="bg-gray-500 hover:bg-gray-600 text-white text-sm font-semibold py-1 px-3 rounded-lg"
-              >
-                Clear
-              </button>
-            </div>
+          {/* Right Side: Controls & Logs */}
+          <div className="flex flex-col gap-6">
             
-            <div className="bg-black/20 rounded-lg p-4 h-96 overflow-y-auto font-mono text-sm">
-              {logs.map((log, index) => (
-                <div
-                  key={index}
-                  className={`mb-2 ${
-                    log.type === 'error' ? 'text-red-300' :
-                    log.type === 'success' ? 'text-green-300' :
-                    'text-blue-200'
-                  }`}
+            {/* Top Right: Passport Selector */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">Select Mock Passport</h3>
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Choose a test passport to simulate scanning:
+                </label>
+                <select
+                  value={selectedPassportType}
+                  onChange={(e) => setSelectedPassportType(e.target.value)}
+                  className="w-full bg-white border border-gray-300 text-gray-900 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={loading || currentStep !== 'home'}
                 >
-                  <span className="text-gray-400">[{log.timestamp}]</span> {log.message}
-                </div>
-              ))}
-              {logs.length === 0 && (
-                <div className="text-gray-400 italic">No logs yet...</div>
-              )}
+                  {PassportService.getAvailablePassportTypes().map((passport) => (
+                    <option key={passport.id} value={passport.id}>
+                      {passport.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500">
+                  Selected passport will be used when you click "Scan Passport"
+                </p>
+              </div>
+            </div>
+
+            {/* Bottom Right: System Logs */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 flex-1">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-800">System Logs</h3>
+                <button
+                  onClick={clearLogs}
+                  className="bg-gray-500 hover:bg-gray-600 text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
+              
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 h-64 overflow-y-auto font-mono text-sm">
+                {logs.map((log, index) => (
+                  <div
+                    key={index}
+                    className={`mb-2 ${
+                      log.type === 'error' ? 'text-red-600' :
+                      log.type === 'success' ? 'text-green-600' :
+                      'text-gray-700'
+                    }`}
+                  >
+                    <span className="text-gray-500">[{log.timestamp}]</span> {log.message}
+                  </div>
+                ))}
+                {logs.length === 0 && (
+                  <div className="text-gray-400 italic">No logs yet...</div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -500,27 +571,27 @@ export default function SecurePassportIdentity() {
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
             
             {passportData && (
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-                <h3 className="text-xl font-semibold mb-4">Passport Data</h3>
+              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">Passport Data</h3>
                 <div className="space-y-2 text-sm">
-                  <div><span className="text-blue-300">Name:</span> {passportData.fullName}</div>
-                  <div><span className="text-blue-300">Document:</span> {passportData.documentNumber}</div>
-                  <div><span className="text-blue-300">Country:</span> {passportData.issuingCountry}</div>
-                  <div><span className="text-blue-300">Expires:</span> {passportData.dateOfExpiry}</div>
+                  <div><span className="text-blue-600 font-medium">Name:</span> <span className="text-gray-700">{passportData.fullName}</span></div>
+                  <div><span className="text-blue-600 font-medium">Document:</span> <span className="text-gray-700">{passportData.documentNumber}</span></div>
+                  <div><span className="text-blue-600 font-medium">Country:</span> <span className="text-gray-700">{passportData.issuingCountry}</span></div>
+                  <div><span className="text-blue-600 font-medium">Expires:</span> <span className="text-gray-700">{passportData.dateOfExpiry}</span></div>
                   {passportKeys && (
-                    <div><span className="text-blue-300">Public Key Hash:</span> {passportKeys.publicKeyHash.substring(0, 20)}...</div>
+                    <div><span className="text-blue-600 font-medium">Public Key Hash:</span> <span className="text-gray-700 font-mono">{passportKeys.publicKeyHash.substring(0, 20)}...</span></div>
                   )}
                 </div>
               </div>
             )}
 
             {deviceKey && (
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-                <h3 className="text-xl font-semibold mb-4">Device Data</h3>
+              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">Device Data</h3>
                 <div className="space-y-2 text-sm">
-                  <div><span className="text-blue-300">Device Address:</span> {deviceKey.deviceAddress}</div>
-                  <div><span className="text-blue-300">TEE Status:</span> {deviceKey.attestationData.fallback ? 'Fallback' : 'Hardware'}</div>
-                  <div><span className="text-blue-300">Timestamp:</span> {new Date(deviceKey.attestationData.timestamp).toLocaleString()}</div>
+                  <div><span className="text-blue-600 font-medium">Device Address:</span> <span className="text-gray-700 font-mono">{deviceKey.deviceAddress}</span></div>
+                  <div><span className="text-blue-600 font-medium">TEE Status:</span> <span className="text-gray-700">{deviceKey.attestationData.fallback ? 'Fallback' : 'Hardware'}</span></div>
+                  <div><span className="text-blue-600 font-medium">Timestamp:</span> <span className="text-gray-700">{new Date(deviceKey.attestationData.timestamp).toLocaleString()}</span></div>
                 </div>
               </div>
             )}
@@ -576,7 +647,7 @@ export default function SecurePassportIdentity() {
       {/* Virtual Passport Modal */}
       {showPassportDetails && passportData && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-blue-900 to-purple-900 rounded-3xl shadow-2xl max-w-lg w-full border-2 border-gold relative overflow-hidden">
+          <div className="bg-gradient-to-br from-blue-900 to-purple-900 rounded-3xl shadow-2xl max-w-lg w-full border-2 border-yellow-500 relative overflow-hidden">
             {/* Passport Header */}
             <div className="bg-gradient-to-r from-blue-800 to-blue-900 p-6 text-center relative">
               <div className="absolute top-4 right-4">
@@ -588,11 +659,11 @@ export default function SecurePassportIdentity() {
                 </button>
               </div>
               
-              <div className="text-gold text-sm font-semibold mb-2">
+              <div className="text-yellow-400 text-sm font-semibold mb-2">
                 {passportData.issuingCountry === 'USA' ? 'UNITED STATES OF AMERICA' : passportData.issuingCountry}
               </div>
               <div className="text-white text-2xl font-bold mb-1">PASSPORT</div>
-              <div className="text-gold text-sm">{passportData.issuingAuthority}</div>
+              <div className="text-yellow-400 text-sm">{passportData.issuingAuthority}</div>
             </div>
 
             {/* Passport Content */}
@@ -617,53 +688,53 @@ export default function SecurePassportIdentity() {
                 <div className="col-span-2">
                   <div className="space-y-3 text-white">
                     <div>
-                      <div className="text-xs text-gold font-semibold">TYPE / TYPE</div>
+                      <div className="text-xs text-yellow-400 font-semibold">TYPE / TYPE</div>
                       <div className="text-sm">P</div>
                     </div>
                     
                     <div>
-                      <div className="text-xs text-gold font-semibold">CODE OF ISSUING STATE / CODE DE L'ÉTAT ÉMETTEUR</div>
+                      <div className="text-xs text-yellow-400 font-semibold">CODE OF ISSUING STATE / CODE DE L'ÉTAT ÉMETTEUR</div>
                       <div className="text-sm">{passportData.nationality}</div>
                     </div>
                     
                     <div>
-                      <div className="text-xs text-gold font-semibold">PASSPORT NO. / PASSEPORT NO.</div>
+                      <div className="text-xs text-yellow-400 font-semibold">PASSPORT NO. / PASSEPORT NO.</div>
                       <div className="text-sm font-mono">{passportData.documentNumber}</div>
                     </div>
                     
                     <div>
-                      <div className="text-xs text-gold font-semibold">SURNAME / NOM</div>
+                      <div className="text-xs text-yellow-400 font-semibold">SURNAME / NOM</div>
                       <div className="text-sm font-semibold">{passportData.lastName}</div>
                     </div>
                     
                     <div>
-                      <div className="text-xs text-gold font-semibold">GIVEN NAMES / PRÉNOMS</div>
+                      <div className="text-xs text-yellow-400 font-semibold">GIVEN NAMES / PRÉNOMS</div>
                       <div className="text-sm">{passportData.firstName}</div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <div className="text-xs text-gold font-semibold">SEX / SEXE</div>
+                        <div className="text-xs text-yellow-400 font-semibold">SEX / SEXE</div>
                         <div className="text-sm">{passportData.sex}</div>
                       </div>
                       <div>
-                        <div className="text-xs text-gold font-semibold">DATE OF BIRTH / DATE DE NAISSANCE</div>
+                        <div className="text-xs text-yellow-400 font-semibold">DATE OF BIRTH / DATE DE NAISSANCE</div>
                         <div className="text-sm">{passportData.dateOfBirth}</div>
                       </div>
                     </div>
                     
                     <div>
-                      <div className="text-xs text-gold font-semibold">PLACE OF BIRTH / LIEU DE NAISSANCE</div>
+                      <div className="text-xs text-yellow-400 font-semibold">PLACE OF BIRTH / LIEU DE NAISSANCE</div>
                       <div className="text-sm">{passportData.placeOfBirth || 'Not Available'}</div>
                     </div>
                     
                     <div>
-                      <div className="text-xs text-gold font-semibold">DATE OF ISSUE / DATE DE DÉLIVRANCE</div>
+                      <div className="text-xs text-yellow-400 font-semibold">DATE OF ISSUE / DATE DE DÉLIVRANCE</div>
                       <div className="text-sm">15 MAR 2022</div>
                     </div>
                     
                     <div>
-                      <div className="text-xs text-gold font-semibold">DATE OF EXPIRY / DATE D'EXPIRATION</div>
+                      <div className="text-xs text-yellow-400 font-semibold">DATE OF EXPIRY / DATE D'EXPIRATION</div>
                       <div className="text-sm">{passportData.dateOfExpiry}</div>
                     </div>
                   </div>
@@ -672,7 +743,7 @@ export default function SecurePassportIdentity() {
 
               {/* MRZ Section */}
               <div className="mt-6 pt-4 border-t border-white/20">
-                <div className="text-xs text-gold font-semibold mb-2">MACHINE READABLE ZONE</div>
+                <div className="text-xs text-yellow-400 font-semibold mb-2">MACHINE READABLE ZONE</div>
                 <div className="bg-black/20 p-3 rounded font-mono text-xs text-white tracking-wider">
                   <div>{passportData.mrzLine1}</div>
                   <div>{passportData.mrzLine2}</div>
@@ -681,7 +752,7 @@ export default function SecurePassportIdentity() {
 
               {/* Security Features */}
               <div className="mt-4 text-center">
-                <div className="text-xs text-gold font-semibold mb-2">VERIFIED ✓</div>
+                <div className="text-xs text-yellow-400 font-semibold mb-2">VERIFIED ✓</div>
                 <div className="flex justify-center space-x-4 text-xs text-white/80">
                   <span>NFC Chip</span>
                   <span>Biometric</span>
