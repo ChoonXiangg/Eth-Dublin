@@ -17,6 +17,8 @@ export default function SecurePassportIdentity() {
   const [error, setError] = useState(null);
   const [privateKeyInput, setPrivateKeyInput] = useState('');
   const [selectedPassportType, setSelectedPassportType] = useState('US_PASSPORT_001');
+  const [deviceHasPassport, setDeviceHasPassport] = useState(false);
+  const [existingPassportKey, setExistingPassportKey] = useState(null);
 
   // Services
   const [teeService] = useState(new TEEService());
@@ -34,249 +36,313 @@ export default function SecurePassportIdentity() {
   };
 
   useEffect(() => {
-    addLog('Secure Passport Identity System Initialized');
+    addLog('🛂 Secure Passport Identity System Initialized (Strict 1:1 Binding)');
     addLog(`TEE Support: ${TEEService.isSupported() ? 'Available' : 'Not Available'}`);
+    checkDevicePassportStatus();
   }, []);
 
-  // Step 1: Scan Passport
+  // Check if device already has a passport registered
+  const checkDevicePassportStatus = async () => {
+    try {
+      addLog('🔍 Checking device passport status...');
+      
+      // Generate device key to get device address
+      const deviceKeyData = await teeService.generateDeviceKey();
+      setDeviceKey(deviceKeyData);
+      
+      // Initialize blockchain
+      await blockchainService.initialize();
+      
+      // Check if device has existing passport
+      const deviceStatus = await blockchainService.hasDevicePassport(deviceKeyData.deviceAddress);
+      
+      if (deviceStatus.hasPassport) {
+        setDeviceHasPassport(true);
+        setExistingPassportKey(deviceStatus.passportPublicKey);
+        addLog('📱 Device already has a passport registered', 'warning');
+        addLog(`🗝️ Passport Key: ${deviceStatus.passportPublicKey.substring(0, 20)}...`);
+        addLog('💡 You can load your passport data using your private key', 'info');
+        setCurrentStep('home'); // Still show buttons
+      } else {
+        addLog('✅ Device can scan a new passport');
+        setCurrentStep('home');
+      }
+      
+    } catch (err) {
+      addLog(`Device check failed: ${err.message}`, 'error');
+      addLog('Continuing in offline mode...');
+      setCurrentStep('home'); // Still show buttons even if check fails
+    }
+  };
+
+  // Step 1: Scan Passport (with strict validation)
   const handleScanPassport = async () => {
     try {
       setLoading(true);
       setError(null);
       setCurrentStep('scanning');
-      addLog('Starting passport scan process...');
+      addLog('🔍 Starting strict passport scan process...');
 
-      // Use selected passport type instead of hardcoded value
+      // First check if device can scan
+      let currentDeviceKey = deviceKey;
+      if (!currentDeviceKey) {
+        const deviceKeyData = await teeService.generateDeviceKey();
+        setDeviceKey(deviceKeyData);
+        currentDeviceKey = deviceKeyData; // Use the fresh data directly
+      }
+
+      await blockchainService.initialize();
+      
+      // STRICT 1:1 BINDING CHECK
+      if (deviceHasPassport) {
+        throw new Error(`❌ SCAN BLOCKED: Device already linked to another passport (${existingPassportKey.substring(0, 20)}...)`);
+      }
+
+      const canScan = await blockchainService.canDeviceScanPassport(currentDeviceKey.deviceAddress);
+      if (!canScan.canScan) {
+        throw new Error(`❌ SCAN BLOCKED: ${canScan.reason}`);
+      }
+
+      addLog('✅ Device authorized to scan passport');
+
+      // Simulate passport scan
       const scannedData = await PassportService.simulatePassportScan(selectedPassportType);
       setPassportData(scannedData);
-      addLog(`Passport scanned: ${scannedData.fullName} (${scannedData.documentNumber})`);
+      addLog(`📄 Passport scanned: ${scannedData.fullName} (${scannedData.documentNumber})`);
 
-      // Generate passport keys (now async)
-      addLog('Generating passport key pair...');
+      // Add debug logging to confirm passport data is set
+      addLog('🔍 Debug: Scanned passport data keys: ' + Object.keys(scannedData).join(', '));
+      addLog('🔍 Debug: Scanned fullName: ' + scannedData.fullName);
+
+      // Generate passport keys
+      addLog('🔐 Generating passport key pair...');
       const keys = await PassportService.generatePassportKeys(scannedData);
       setPassportKeys(keys);
-      addLog('Passport keys generated successfully');
+      addLog('✅ Passport keys generated successfully');
 
+      // Check if passport is already registered
+      addLog('🔍 Checking if passport already exists on blockchain...');
+      const isRegistered = await blockchainService.isPassportRegistered(keys.publicKeyHash);
+      
+      if (isRegistered) {
+        throw new Error('❌ PASSPORT ALREADY REGISTERED: This passport has been scanned by another device');
+      }
+
+      addLog('✅ Passport is new - proceeding to registration');
       setCurrentStep('scanned');
-      await handleTEEAttestation(keys);
+      await handleEncryptAndUpload(keys, scannedData, currentDeviceKey);
 
     } catch (err) {
-      addLog(`Passport scan failed: ${err.message}`, 'error');
+      addLog(`❌ Passport scan failed: ${err.message}`, 'error');
       setError(err.message);
+      setCurrentStep('error');
     } finally {
       setLoading(false);
     }
   };
 
-  // Step 2: TEE Attestation
-  const handleTEEAttestation = async (passportKeysParam) => {
+  // Step 2: Encrypt and Upload to IPFS
+  const handleEncryptAndUpload = async (passportKeysParam, passportDataParam = null, deviceKeyParam = null) => {
     try {
-      addLog('Starting TEE attestation process...');
-      
-      const deviceKeyData = await teeService.generateDeviceKey();
-      setDeviceKey(deviceKeyData);
-      addLog('TEE attestation completed');
-      addLog(`Device address: ${deviceKeyData.deviceAddress}`);
+      addLog('🔒 Encrypting passport data with device key...');
 
-      setCurrentStep('blockchain-check');
-      await handleBlockchainCheck(passportKeysParam, deviceKeyData);
+      // Use passed parameter or state variable
+      const dataToUse = passportDataParam || passportData;
+      const deviceKeyToUse = deviceKeyParam || deviceKey;
 
-    } catch (err) {
-      addLog(`TEE attestation failed: ${err.message}`, 'error');
-      setError(err.message);
-    }
-  };
-
-  // Step 3: Blockchain Check
-  const handleBlockchainCheck = async (passportKeysParam, deviceKeyParam) => {
-    try {
-      addLog('Initializing blockchain connection...');
-      await blockchainService.initialize();
-
-      addLog('Checking if passport is already registered...');
-      const isRegistered = await blockchainService.isPassportRegistered(passportKeysParam.publicKeyHash);
-      
-      if (isRegistered) {
-        addLog('Passport public key already exists on-chain!', 'error');
-        setError('This passport is already registered. Cannot proceed with registration.');
-        setCurrentStep('error');
-        return;
+      // Add debug logging to check what we have before encryption
+      addLog('🔍 Debug: passportData before encryption: ' + (dataToUse ? 'exists' : 'null'));
+      if (dataToUse) {
+        addLog('🔍 Debug: passportData keys: ' + Object.keys(dataToUse).join(', '));
+        addLog('🔍 Debug: fullName: ' + dataToUse.fullName);
       }
 
-      addLog('Passport is new - proceeding to registration');
-      setCurrentStep('encrypt-upload');
-      await handleEncryptAndUpload(passportKeysParam, deviceKeyParam);
-
-    } catch (err) {
-      addLog(`Blockchain check failed: ${err.message}`, 'error');
-      setError(err.message);
-    }
-  };
-
-  // Step 4: Encrypt and Upload to IPFS
-  const handleEncryptAndUpload = async (passportKeysParam, deviceKeyParam) => {
-    try {
-      addLog('Encrypting passport data with device key...');
-
       const dataToEncrypt = {
-        passportDetails: passportData,
-        deviceId: deviceKeyParam.attestationData.deviceFingerprint,
+        passportDetails: dataToUse,
+        deviceId: deviceKeyToUse?.attestationData?.deviceFingerprint || 'unknown',
         passportPrivateKey: passportKeysParam.privateKey,
         timestamp: Date.now()
       };
 
-      const encryptedData = await teeService.encryptWithDeviceKey(JSON.stringify(dataToEncrypt));
-      addLog('Data encrypted successfully');
+      // Add debug logging for the data we're about to encrypt
+      addLog('🔍 Debug: dataToEncrypt structure ready');
+      addLog('🔍 Debug: dataToEncrypt.passportDetails: ' + (dataToEncrypt.passportDetails ? 'exists' : 'null'));
 
-      addLog('Uploading encrypted data to IPFS...');
+      const encryptedData = await teeService.encryptWithDeviceKey(JSON.stringify(dataToEncrypt));
+      addLog('✅ Data encrypted successfully');
+
+      addLog('🌐 Uploading encrypted data to IPFS...');
       const ipfsHash = await ipfsService.uploadEncryptedData(encryptedData);
-      addLog(`Data uploaded to IPFS: ${ipfsHash}`);
+      addLog(`✅ Data uploaded to IPFS: ${ipfsHash}`);
 
       setCurrentStep('register-blockchain');
-      await handleBlockchainRegistration(ipfsHash, passportKeysParam, deviceKeyParam);
+      await handleBlockchainRegistration(ipfsHash, passportKeysParam, deviceKeyToUse);
 
     } catch (err) {
-      addLog(`Encryption/Upload failed: ${err.message}`, 'error');
+      addLog(`❌ Encryption/Upload failed: ${err.message}`, 'error');
       setError(err.message);
     }
   };
 
-  // Step 5: Register on Blockchain
-  const handleBlockchainRegistration = async (ipfsHash, passportKeysParam, deviceKeyParam) => {
+  // Step 3: Register on Blockchain with Private Key
+  const handleBlockchainRegistration = async (ipfsHash, passportKeysParam, deviceKeyParam = null) => {
     try {
-      addLog('Registering passport on blockchain...');
+      addLog('⛓️ Registering passport with strict 1:1 binding...');
+
+      // Use passed parameter or state variable
+      const deviceKeyToUse = deviceKeyParam || deviceKey;
+
+      if (!deviceKeyToUse || !deviceKeyToUse.deviceAddress) {
+        throw new Error('Device key not available for blockchain registration');
+      }
+
+      // Generate private key hash for verification
+      const encoder = new TextEncoder();
+      const data = encoder.encode(passportKeysParam.privateKey);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const privateKeyHash = '0x' + Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
 
       const result = await blockchainService.registerPassport(
         passportKeysParam.publicKeyHash,
-        deviceKeyParam.deviceAddress,
-        ipfsHash
+        deviceKeyToUse.deviceAddress,
+        ipfsHash,
+        privateKeyHash
       );
 
-      addLog('Passport registered successfully!');
-      addLog(`Transaction: ${result.txHash}`);
-      addLog(`Block: ${result.blockNumber}`);
+      addLog('✅ Passport registered with strict 1:1 binding!');
+      addLog(`📝 Transaction: ${result.txHash}`);
+      addLog(`🔗 Block: ${result.blockNumber}`);
+      addLog('⚠️ IMPORTANT: Save your private key to access data later!');
+      addLog(`🔑 Private Key: ${passportKeysParam.privateKey}`);
 
       setCurrentStep('success');
 
     } catch (err) {
-      addLog(`Blockchain registration failed: ${err.message}`, 'error');
+      addLog(`❌ Blockchain registration failed: ${err.message}`, 'error');
       setError(err.message);
     }
   };
 
-  // Import Private Key Flow
-  const handleImportPrivateKey = async () => {
+  // Load Passport Data with Private Key
+  const handleLoadPassportData = async () => {
     try {
       setLoading(true);
       setError(null);
-      setCurrentStep('import');
-      addLog('Starting private key import process...');
+      setCurrentStep('private-key-input');
+      addLog('🔓 Ready to load passport data with private key verification...');
 
     } catch (err) {
-      addLog(`Import failed: ${err.message}`, 'error');
+      addLog(`❌ Load preparation failed: ${err.message}`, 'error');
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle Migration Process
-  const handleMigration = async (privateKeyInput) => {
+  // Verify Private Key and Load Data
+  const handleVerifyAndLoadData = async () => {
     try {
       setLoading(true);
       setError(null);
-      addLog('Starting migration process...');
+      addLog('🔓 Loading passport data with private key verification...');
 
       if (!privateKeyInput || privateKeyInput.length < 50) {
-        throw new Error('Invalid private key format');
+        throw new Error('Please enter a valid private key');
       }
 
-      // Generate new device key for this device
-      addLog('Generating new device key for this device...');
-      const newDeviceKeyData = await teeService.generateDeviceKey();
-      setDeviceKey(newDeviceKeyData);
-      addLog(`New device key generated: ${newDeviceKeyData.deviceAddress}`);
+      let currentDeviceKey = deviceKey;
+      if (!currentDeviceKey) {
+        const deviceKeyData = await teeService.generateDeviceKey();
+        setDeviceKey(deviceKeyData);
+        currentDeviceKey = deviceKeyData; // Use the fresh data directly
+      }
 
-      // Initialize blockchain
-      addLog('Connecting to blockchain...');
       await blockchainService.initialize();
 
-      // FIXED: Properly reconstruct the publicKeyHash from the private key
-      // The private key is the hex representation of the SHA-256 hash array
-      // We need to reconstruct the same publicKeyHash that was used during registration
-      addLog('Reconstructing passport keys from private key...');
-      
-      // Convert private key back to hash array (reverse the original process)
+      // Reconstruct passport keys from private key
       const privateKeyHex = privateKeyInput;
       const hashArray = [];
       for (let i = 0; i < privateKeyHex.length; i += 2) {
         hashArray.push(parseInt(privateKeyHex.substr(i, 2), 16));
       }
       
-      // CRITICAL FIX: In generatePassportKeys, publicKeyHash is computed AFTER hashArray.reverse()
-      // So we need to reverse our reconstructed array to match the original registration
-      const reversedHashArray = hashArray.slice().reverse(); // Create a copy and reverse it
+      const reversedHashArray = hashArray.slice().reverse();
       const publicKeyHash = '0x' + reversedHashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-      
-      const simulatedPassportKeys = {
-        privateKey: privateKeyInput,
-        publicKey: reversedHashArray.map(b => b.toString(16).padStart(2, '0')).join(''), // Use reversed array for consistency
-        publicKeyHash: publicKeyHash
-      };
 
-      setPassportKeys(simulatedPassportKeys);
-      addLog('Passport keys reconstructed from private key');
-      addLog(`Reconstructed publicKeyHash: ${publicKeyHash.substring(0, 20)}...`);
-
-      // Check if passport exists on-chain
-      addLog('Verifying passport exists on blockchain...');
-      const isRegistered = await blockchainService.isPassportRegistered(simulatedPassportKeys.publicKeyHash);
-      
-      if (!isRegistered) {
-        throw new Error('Passport not found on blockchain. Please check your private key.');
+      // If device has existing passport, verify it matches
+      if (deviceHasPassport && existingPassportKey !== publicKeyHash) {
+        throw new Error('❌ Private key does not match the passport registered on this device');
       }
 
-      addLog('Passport found on blockchain');
+      // Generate private key hash for verification
+      const encoder = new TextEncoder();
+      const data = encoder.encode(privateKeyInput);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const privateKeyHashForVerification = '0x' + Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
 
-      // In a real migration, you would:
-      // 1. Decrypt the IPFS data using the old device key
-      // 2. Re-encrypt with the new device key
-      // 3. Update the blockchain with the new device address
-      
-      addLog('Performing migration...');
-      
-      // Generate real migration signature using passport private key
-      // Create migration message to sign
-      const migrationMessage = ethers.utils.solidityKeccak256(
-        ['bytes32', 'address', 'string', 'uint256'],
-        [
-          simulatedPassportKeys.publicKeyHash,
-          newDeviceKeyData.deviceAddress,
-          'QmMigratedData123',
-          Date.now() // Add timestamp to prevent replay attacks
-        ]
-      );
-      
-      // Sign the migration message with passport private key
-      const wallet = new ethers.Wallet(simulatedPassportKeys.privateKey);
-      const migrationSignature = await wallet.signMessage(ethers.utils.arrayify(migrationMessage));
-      
-      addLog('Migration signature generated with passport private key');
-      addLog(`Signature: ${migrationSignature.substring(0, 20)}...`);
-      
-      const result = await blockchainService.migratePassport(
-        simulatedPassportKeys.publicKeyHash,
-        newDeviceKeyData.deviceAddress,
-        'QmMigratedData123', // In real system, this would be the re-encrypted IPFS hash
-        migrationSignature  // Real cryptographic signature proving ownership
+      addLog('🔍 Verifying private key and accessing data...');
+
+      // Access passport data with private key verification
+      const ipfsHash = await blockchainService.accessPassportData(
+        publicKeyHash,
+        currentDeviceKey.deviceAddress,
+        privateKeyHashForVerification
       );
 
-      addLog('Migration completed successfully!');
-      addLog(`Transaction: ${result.txHash}`);
-      setCurrentStep('success');
+      addLog('✅ Private key verified - access granted!');
+      addLog(`📄 IPFS Hash: ${ipfsHash}`);
+
+      // Decrypt and display data
+      addLog('🔒 Decrypting passport data...');
+      const encryptedDataPackage = await ipfsService.retrieveEncryptedData(ipfsHash);
+      
+      // Extract the actual encrypted data from the IPFS data package
+      const actualEncryptedData = encryptedDataPackage.data;
+      addLog('📦 Extracted encrypted data from IPFS package');
+      
+      const decryptedData = await teeService.decryptWithDeviceKey(actualEncryptedData);
+      
+      // Add debug logging to see what we actually got
+      addLog('🔍 Debug: Decrypted data type: ' + typeof decryptedData);
+      addLog('🔍 Debug: Decrypted data preview: ' + decryptedData.substring(0, 100) + '...');
+      
+      const passportInfo = JSON.parse(decryptedData);
+      
+      // Add debug logging for the parsed object
+      addLog('🔍 Debug: Parsed object keys: ' + Object.keys(passportInfo).join(', '));
+      if (passportInfo.passportDetails) {
+        addLog('🔍 Debug: PassportDetails keys: ' + Object.keys(passportInfo.passportDetails).join(', '));
+      } else {
+        addLog('🔍 Debug: passportDetails is: ' + passportInfo.passportDetails);
+      }
+
+      // Handle case where passportDetails is null (corrupted/old data)
+      if (!passportInfo.passportDetails) {
+        addLog('⚠️ Stored passport data is corrupted or incomplete', 'warning');
+        addLog('💡 This may happen with old test data. Try scanning a new passport.', 'info');
+        throw new Error('Stored passport data is corrupted. Please scan a new passport.');
+      }
+
+      setPassportData(passportInfo.passportDetails);
+      setPassportKeys({ 
+        publicKeyHash,
+        privateKey: privateKeyInput // Store the private key for display
+      });
+      addLog('✅ Passport data loaded successfully!');
+      
+      // Only log welcome message if passportDetails exists and has fullName
+      if (passportInfo.passportDetails && passportInfo.passportDetails.fullName) {
+        addLog(`👤 Welcome back, ${passportInfo.passportDetails.fullName}!`);
+      } else {
+        addLog('⚠️ Passport data structure issue - fullName not found');
+      }
+
+      setCurrentStep('data-loaded');
 
     } catch (err) {
-      addLog(`Migration failed: ${err.message}`, 'error');
+      addLog(`❌ Data access failed: ${err.message}`, 'error');
       setError(err.message);
     } finally {
       setLoading(false);
@@ -337,20 +403,36 @@ export default function SecurePassportIdentity() {
                       <div className="w-full max-w-xs">
                         {currentStep === 'home' && (
                           <div className="space-y-4">
+                            {deviceHasPassport && (
+                              <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-xl p-3 mb-4">
+                                <div className="flex items-center text-yellow-400 text-sm">
+                                  <span className="mr-2">⚠️</span>
+                                  <span>Device has existing passport</span>
+                                </div>
+                                <div className="text-yellow-300/70 text-xs mt-1 font-mono">
+                                  {existingPassportKey?.substring(0, 20)}...
+                                </div>
+                              </div>
+                            )}
+                            
                             <button
                               onClick={handleScanPassport}
-                              disabled={loading}
-                              className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
+                              disabled={loading || deviceHasPassport}
+                              className={`w-full font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg ${
+                                deviceHasPassport 
+                                  ? 'bg-gray-500 cursor-not-allowed text-gray-300' 
+                                  : 'bg-green-500 hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white'
+                              }`}
                             >
-                              Scan Passport
+                              {deviceHasPassport ? 'Scan Blocked (Device Used)' : 'Scan Passport'}
                             </button>
                             
                             <button
-                              onClick={handleImportPrivateKey}
+                              onClick={handleLoadPassportData}
                               disabled={loading}
                               className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
                             >
-                              Import Private Key
+                              Load Passport Data
                             </button>
                           </div>
                         )}
@@ -422,7 +504,7 @@ export default function SecurePassportIdentity() {
                             </div>
                             
                             <button
-                              onClick={() => handleTEEAttestation(passportKeys)}
+                              onClick={() => handleEncryptAndUpload(passportKeys, passportData, deviceKey)}
                               className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg"
                             >
                               Continue
@@ -539,29 +621,66 @@ export default function SecurePassportIdentity() {
                           </div>
                         )}
 
-                        {currentStep === 'import' && (
+                        {currentStep === 'data-loaded' && passportData && (
+                          <div className="text-white">
+                            <div className="text-center mb-4">
+                              <h3 className="text-lg font-semibold text-white mb-2">Passport Data</h3>
+                            </div>
+                            
+                            <div className="space-y-3 text-sm">
+                              <div><span className="text-blue-300 font-medium">Name:</span> <span className="text-white">{passportData.fullName}</span></div>
+                              <div><span className="text-blue-300 font-medium">Document:</span> <span className="text-white">{passportData.documentNumber}</span></div>
+                              <div><span className="text-blue-300 font-medium">Country:</span> <span className="text-white">{passportData.issuingCountry}</span></div>
+                              <div><span className="text-blue-300 font-medium">DOB:</span> <span className="text-white">{passportData.dateOfBirth}</span></div>
+                              <div><span className="text-blue-300 font-medium">Expires:</span> <span className="text-white">{passportData.dateOfExpiry}</span></div>
+                              <div><span className="text-blue-300 font-medium">Sex:</span> <span className="text-white">{passportData.sex}</span></div>
+                              {passportKeys && (
+                                <div><span className="text-blue-300 font-medium">Key Hash:</span> <span className="text-white font-mono text-xs">{passportKeys.publicKeyHash.substring(0, 20)}...</span></div>
+                              )}
+                            </div>
+                            
+                            <button
+                              onClick={() => setCurrentStep('success')}
+                              className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-lg mt-4"
+                            >
+                              Back
+                            </button>
+                          </div>
+                        )}
+
+                        {currentStep === 'private-key-input' && (
                           <div className="space-y-4">
-                            <h3 className="text-white text-lg font-semibold text-center mb-4">Import Private Key</h3>
+                            <div className="text-center mb-4">
+                              <div className="bg-blue-500 rounded-full h-12 w-12 mx-auto mb-3 flex items-center justify-center">
+                                <span className="text-white font-bold">🔑</span>
+                              </div>
+                              <h3 className="text-lg font-semibold text-white">Enter Private Key</h3>
+                              <p className="text-sm text-gray-300 mt-2">
+                                Enter your passport private key to access your data
+                              </p>
+                            </div>
+                            
                             <div>
                               <textarea
                                 value={privateKeyInput}
                                 onChange={(e) => setPrivateKeyInput(e.target.value)}
                                 className="w-full bg-gray-800 border border-gray-600 rounded-xl p-3 text-white placeholder-gray-400 text-sm font-mono"
                                 rows={3}
-                                placeholder="Enter your private key..."
+                                placeholder="Paste your private key here..."
                                 disabled={loading}
                               />
                             </div>
+                            
                             <div className="flex space-x-3">
                               <button 
-                                onClick={() => handleMigration(privateKeyInput)}
+                                onClick={handleVerifyAndLoadData}
                                 disabled={loading || !privateKeyInput || privateKeyInput.length < 50}
                                 className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform active:scale-95"
                               >
-                                {loading ? 'Loading...' : 'Import'}
+                                {loading ? 'Verifying...' : 'Load Data'}
                               </button>
                               <button
-                                onClick={resetFlow}
+                                onClick={() => {setCurrentStep('home'); setPrivateKeyInput(''); setError(null);}}
                                 disabled={loading}
                                 className="flex-1 bg-gray-500 hover:bg-gray-600 disabled:opacity-50 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform active:scale-95"
                               >
@@ -612,8 +731,8 @@ export default function SecurePassportIdentity() {
             </div>
 
             {/* Bottom Right: System Logs - Expanded */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 flex-1 min-h-0 overflow-hidden">
-              <div className="flex justify-between items-center mb-4">
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 flex-1 flex flex-col min-h-0">
+              <div className="flex justify-between items-center mb-4 flex-shrink-0">
                 <h3 className="text-xl font-bold text-gray-800">System Logs</h3>
                 <button
                   onClick={clearLogs}
@@ -623,12 +742,13 @@ export default function SecurePassportIdentity() {
                 </button>
               </div>
               
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex-1 overflow-y-auto font-mono text-sm">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex-1 overflow-y-auto font-mono text-sm max-h-96">
                 {logs.map((log, index) => (
                   <div
                     key={index}
                     className={`mb-2 ${
                       log.type === 'error' ? 'text-red-600' :
+                      log.type === 'warning' ? 'text-yellow-600' :
                       log.type === 'success' ? 'text-green-600' :
                       'text-gray-700'
                     }`}

@@ -10,14 +10,14 @@ contract SecurePassportIdentity is Ownable, ReentrancyGuard {
         string ipfsHash;              // Current IPFS hash of encrypted data
         address currentDevice;        // Current device address (from TEE)
         uint256 registrationTime;
-        uint256 lastMigrationTime;
         bool isActive;
+        bytes32 privateKeyHash;       // Hash of passport private key for verification
     }
 
     // Mapping from passport public key to identity
     mapping(bytes32 => PassportIdentity) public passportIdentities;
     
-    // Mapping from device address to passport public key
+    // Mapping from device address to passport public key (1:1 binding)
     mapping(address => bytes32) public deviceToPassport;
     
     // Track all registered passport public keys
@@ -25,33 +25,38 @@ contract SecurePassportIdentity is Ownable, ReentrancyGuard {
 
     // Events
     event PassportRegistered(bytes32 indexed passportPublicKey, address deviceAddress, string ipfsHash, uint256 timestamp);
-    event PassportMigrated(bytes32 indexed passportPublicKey, address oldDevice, address newDevice, string newIpfsHash, uint256 timestamp);
+    event PassportDataAccessed(bytes32 indexed passportPublicKey, address deviceAddress, uint256 timestamp);
     event PassportRevoked(bytes32 indexed passportPublicKey, uint256 timestamp);
 
     /**
-     * Register a new passport identity
+     * Register a new passport identity with strict 1:1 binding
      * @param passportPublicKey Unique public key derived from passport
      * @param deviceAddress TEE-attested device address
      * @param ipfsHash IPFS hash of encrypted passport data
+     * @param privateKeyHash Hash of the passport private key for later verification
      */
     function registerPassport(
         bytes32 passportPublicKey,
         address deviceAddress,
-        string memory ipfsHash
+        string memory ipfsHash,
+        bytes32 privateKeyHash
     ) external nonReentrant {
         require(passportPublicKey != bytes32(0), "Invalid passport public key");
         require(deviceAddress != address(0), "Invalid device address");
         require(bytes(ipfsHash).length > 0, "Invalid IPFS hash");
-        require(!passportIdentities[passportPublicKey].isActive, "Passport already registered");
-        require(deviceToPassport[deviceAddress] == bytes32(0), "Device already linked to passport");
+        require(privateKeyHash != bytes32(0), "Invalid private key hash");
+        
+        // STRICT 1:1 BINDING CHECKS
+        require(!passportIdentities[passportPublicKey].isActive, "Passport already registered by another device");
+        require(deviceToPassport[deviceAddress] == bytes32(0), "Device already linked to another passport");
 
         passportIdentities[passportPublicKey] = PassportIdentity({
             passportPublicKey: passportPublicKey,
             ipfsHash: ipfsHash,
             currentDevice: deviceAddress,
             registrationTime: block.timestamp,
-            lastMigrationTime: block.timestamp,
-            isActive: true
+            isActive: true,
+            privateKeyHash: privateKeyHash
         });
 
         deviceToPassport[deviceAddress] = passportPublicKey;
@@ -61,41 +66,32 @@ contract SecurePassportIdentity is Ownable, ReentrancyGuard {
     }
 
     /**
-     * Migrate passport to new device
-     * @param passportPublicKey The passport to migrate
-     * @param newDeviceAddress New TEE-attested device address
-     * @param newIpfsHash New IPFS hash with re-encrypted data
-     * @param migrationSignature Signature proving ownership of passport private key
+     * Access passport data - requires private key verification
+     * @param passportPublicKey The passport to access
+     * @param deviceAddress The device requesting access
+     * @param privateKeyHash Hash of the provided private key
+     * @return ipfsHash The IPFS hash containing encrypted passport data
      */
-    function migratePassport(
+    function accessPassportData(
         bytes32 passportPublicKey,
-        address newDeviceAddress,
-        string memory newIpfsHash,
-        bytes memory migrationSignature
-    ) external nonReentrant {
+        address deviceAddress,
+        bytes32 privateKeyHash
+    ) external view returns (string memory ipfsHash) {
         require(passportIdentities[passportPublicKey].isActive, "Passport not registered");
-        require(newDeviceAddress != address(0), "Invalid new device address");
-        require(bytes(newIpfsHash).length > 0, "Invalid IPFS hash");
-        require(deviceToPassport[newDeviceAddress] == bytes32(0), "New device already linked");
-        
-        // Verify migration signature (proves ownership of passport private key)
-        require(verifyMigrationSignature(passportPublicKey, newDeviceAddress, migrationSignature), "Invalid migration signature");
+        require(passportIdentities[passportPublicKey].currentDevice == deviceAddress, "Device not authorized for this passport");
+        require(passportIdentities[passportPublicKey].privateKeyHash == privateKeyHash, "Invalid private key - access denied");
 
-        PassportIdentity storage identity = passportIdentities[passportPublicKey];
-        address oldDevice = identity.currentDevice;
+        return passportIdentities[passportPublicKey].ipfsHash;
+    }
 
-        // Clear old device mapping
-        delete deviceToPassport[oldDevice];
-
-        // Update to new device and IPFS hash
-        identity.currentDevice = newDeviceAddress;
-        identity.ipfsHash = newIpfsHash;
-        identity.lastMigrationTime = block.timestamp;
-        
-        // Set new device mapping
-        deviceToPassport[newDeviceAddress] = passportPublicKey;
-
-        emit PassportMigrated(passportPublicKey, oldDevice, newDeviceAddress, newIpfsHash, block.timestamp);
+    /**
+     * Verify if device can scan a new passport (for UI validation)
+     */
+    function canDeviceScanPassport(address deviceAddress) external view returns (bool canScan, string memory reason) {
+        if (deviceToPassport[deviceAddress] != bytes32(0)) {
+            return (false, "Device already linked to another passport");
+        }
+        return (true, "Device can scan a new passport");
     }
 
     /**
@@ -106,21 +102,17 @@ contract SecurePassportIdentity is Ownable, ReentrancyGuard {
     }
 
     /**
-     * Get passport identity details
+     * Get basic passport identity details (without private data)
      */
     function getPassportIdentity(bytes32 passportPublicKey) external view returns (
-        string memory ipfsHash,
         address currentDevice,
         uint256 registrationTime,
-        uint256 lastMigrationTime,
         bool isActive
     ) {
         PassportIdentity memory identity = passportIdentities[passportPublicKey];
         return (
-            identity.ipfsHash,
             identity.currentDevice,
             identity.registrationTime,
-            identity.lastMigrationTime,
             identity.isActive
         );
     }
@@ -140,7 +132,15 @@ contract SecurePassportIdentity is Ownable, ReentrancyGuard {
     }
 
     /**
-     * Revoke a passport (admin only)
+     * Check if a device has an existing passport registration
+     */
+    function hasDevicePassport(address deviceAddress) external view returns (bool hasPassport, bytes32 passportPublicKey) {
+        bytes32 passport = deviceToPassport[deviceAddress];
+        return (passport != bytes32(0), passport);
+    }
+
+    /**
+     * Revoke a passport (admin only) - breaks the 1:1 binding
      */
     function revokePassport(bytes32 passportPublicKey) external onlyOwner {
         require(passportIdentities[passportPublicKey].isActive, "Passport not active");
@@ -148,24 +148,11 @@ contract SecurePassportIdentity is Ownable, ReentrancyGuard {
         PassportIdentity storage identity = passportIdentities[passportPublicKey];
         address deviceAddress = identity.currentDevice;
         
-        // Clear mappings
+        // Clear mappings to allow device to scan new passport
         delete deviceToPassport[deviceAddress];
         identity.isActive = false;
 
         emit PassportRevoked(passportPublicKey, block.timestamp);
-    }
-
-    /**
-     * Verify migration signature (placeholder - implement actual signature verification)
-     */
-    function verifyMigrationSignature(
-        bytes32 passportPublicKey,
-        address newDeviceAddress,
-        bytes memory signature
-    ) internal pure returns (bool) {
-        // TODO: Implement actual signature verification using passport private key
-        // For now, return true for development
-        return signature.length > 0;
     }
 
     /**
@@ -177,5 +164,16 @@ contract SecurePassportIdentity is Ownable, ReentrancyGuard {
             delete deviceToPassport[identity.currentDevice];
         }
         delete passportIdentities[passportPublicKey];
+    }
+
+    /**
+     * Reset device binding (admin only) - allows device to scan new passport
+     */
+    function resetDevice(address deviceAddress) external onlyOwner {
+        bytes32 passportKey = deviceToPassport[deviceAddress];
+        if (passportKey != bytes32(0)) {
+            passportIdentities[passportKey].isActive = false;
+            delete deviceToPassport[deviceAddress];
+        }
     }
 } 
